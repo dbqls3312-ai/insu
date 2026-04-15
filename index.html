@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>계약 전 알릴 의무 사항</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    body { 
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+      -webkit-tap-highlight-color: transparent; 
+      background-color: #f3f4f6; 
+      word-break: keep-all; 
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .card-shadow { box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04); }
+    
+    .tab-active { background-color: #1e293b; color: white; font-weight: 700; }
+    .tab-inactive { background-color: white; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; }
+    
+    .btn-select-yes { background-color: #fef2f2; border: 2px solid #ef4444; color: #dc2626; font-weight: 800; }
+    .btn-select-no { background-color: #1e293b; border: 2px solid #1e293b; color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
+    .btn-unselected { background-color: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
+    .btn-type-selected { background-color: #1e293b; border: 2px solid #1e293b; color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
+    
+    .chip-active { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: 700; }
+    .chip-inactive { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+
+    .input-error { border-color: #ef4444 !important; background-color: #fef2f2 !important; animation: shake 0.5s both; }
+    .box-error { border: 2px solid #ef4444 !important; background-color: #fef2f2 !important; animation: shake 0.5s both; border-radius: 1.5rem; }
+    
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
+    @keyframes slideUpFade { 0% { transform: translate(-50%, 20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+    .toast-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    @keyframes gentlePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+    .animate-gentle-pulse { animation: gentlePulse 2s infinite ease-in-out; }
+    @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+    .animate-bounce-x { animation: bounce-x 1s infinite; }
+    
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .suggest-chip { background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 14px; padding: 8px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-red-200">
+
+  <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen relative pb-32">
+    <!-- 상단 헤더 -->
+    <div class="bg-gradient-to-b from-slate-800 to-slate-900 px-6 pt-10 pb-12 text-white rounded-b-[2.5rem] shadow-sm relative">
+      <div id="save-indicator" class="absolute top-4 right-5 text-[11px] font-bold text-slate-400 flex items-center gap-1 transition-opacity duration-300 opacity-0">
+        <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>자동저장 됨
+      </div>
+      <h1 class="text-[28px] font-extrabold tracking-tight mb-2 mt-2">계약 전 알릴 의무</h1>
+      <p class="text-slate-300 text-[16px] font-medium leading-[1.6]">고객님의 안전한 보상을 위해<br>질문에 하나씩 답해주세요.</p>
+    </div>
+
+    <div class="px-5 space-y-5 -mt-8 relative z-10">
+      <!-- 1~6번 질문 영역 -->
+      <div id="questions-container" class="space-y-4"></div>
+
+      <!-- 상세 병력 섹션 -->
+      <div id="details-section" class="hidden mt-10 pt-6">
+        <div class="mb-6 px-1 relative">
+          <h2 class="text-[24px] font-extrabold text-slate-800 tracking-tight">상세 병력 입력</h2>
+          
+          <div class="mt-4 bg-red-50 border-2 border-red-200 p-4 rounded-2xl shadow-sm animate-gentle-pulse">
+            <p class="text-[15px] text-red-600 font-extrabold leading-relaxed flex items-start gap-2">
+              <span class="text-xl leading-none mt-0.5">🚨</span>
+              <span>병력이 여러 개라면 반드시 우측의 <span class="bg-white border border-red-300 text-red-600 px-2 py-0.5 rounded-lg shadow-sm mx-0.5">추가</span> 버튼을 눌러 각각 작성해주세요!</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 snap-x hide-scrollbar px-1" id="tabs-container"></div>
+        <div id="tab-content" class="bg-white card-shadow rounded-3xl p-6 border border-slate-100 transition-all"></div>
+      </div>
+    </div>
+
+    <!-- 하단 고정 제출 버튼 (상시 활성화, 클릭 시 에러 검증) -->
+    <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
+      <button id="submit-btn" onclick="validateAndCopy()" class="w-full h-[64px] rounded-2xl font-extrabold text-[20px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all">
+        <span id="submit-text">내용 복사해서 카톡으로 보내기</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed top-12 left-1/2 transform -translate-x-1/2 hidden z-50 w-[90%] max-w-sm pointer-events-none">
+    <div id="toast-content" class="flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white"></div>
+  </div>
+
+  <script>
+    const diseaseLibrary = {
+      "머리": ["두통", "편두통", "뇌진탕"], "허리": ["디스크", "협착증", "요추염좌"], "목": ["목디스크", "거북목", "편도염"],
+      "위": ["위염", "위궤양", "역류성식도염"], "장": ["장염", "대장용종", "과민성대장"], "감기": ["감기", "코로나", "비염"],
+      "여자": ["자궁근종", "난소낭종", "질염"], "갑상": ["갑상선결절", "갑상선기능항진증"]
+    };
+
+    const criticalIllnessesList = ["암", "백혈병", "고혈압", "협심증", "심근경색", "심장판막증", "간경화증", "뇌졸중증", "당뇨병", "에이즈", "직장/항문질환"];
+
+    const today = new Date();
+    const formatDate = (d) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    
+    const calcDate = (months, years = 0) => {
+      const d = new Date(today);
+      d.setMonth(d.getMonth() - months);
+      d.setFullYear(d.getFullYear() - years);
+      return formatDate(d);
+    };
+
+    // YYYY-MM 형태 (논리 검증용)
+    const getMonthOffset = (m, y=0) => {
+      const d = new Date(today);
+      d.setMonth(d.getMonth() - m);
+      d.setFullYear(d.getFullYear() - y);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    const date3m = calcDate(3); const limit3m = getMonthOffset(3);
+    const date1y = calcDate(0, 1); const limit1y = getMonthOffset(0, 1);
+    const date5y = calcDate(0, 5); const limit5y = getMonthOffset(0, 5);
+    const date10y = calcDate(0, 10); const limit10y = getMonthOffset(0, 10);
+
+    const questions = [
+      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "병원에서 진찰, 검사, 치료, 약 처방 등을 받은 적이 있습니까?" },
+      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "혈압약, 수면제, 진통제 등 약물을 드신 적이 있습니까?" },
+      { periodLabel: "최근 1년 이내", dateBadge: date1y + " 이후", text: "의사로부터 진찰 또는 검사를 통하여 추가검사(재검사)를 받은 사실이 있습니까?" },
+      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "입원, 수술, 7일 이상 치료, 30일 이상 약 처방을 받은 적이 있습니까?" },
+      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "아래 11대 중대질환으로 진단, 치료, 입원, 수술, 정밀검사를 받은 적이 있습니까?", hasList: true },
+      { periodLabel: "최근 10년 이내", dateBadge: date10y + " 이후", text: "병원에서 진찰/검사를 받고 입원이나 수술을 한 적이 있습니까?" }
+    ];
+
+    let answers = {};
+    let diseases = [{ 
+      id: 1, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', 
+      startDate: '', endDate: '', outPatientDays: '', medicineDays: '', 
+      surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', 
+      errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } 
+    }];
+    let currentTabId = 1;
+    let nextDiseaseId = 2;
+    let hasShownAddGuide = false;
+    let saveTimeout;
+
+    const STORAGE_KEY = 'insurance_form_v2';
+
+    function saveDataToLocal() {
+      const dataToSave = { answers, diseases, currentTabId, nextDiseaseId, hasShownAddGuide, timestamp: new Date().getTime() };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      const indicator = document.getElementById('save-indicator');
+      indicator.classList.remove('opacity-0');
+      setTimeout(() => indicator.classList.add('opacity-0'), 2000);
+    }
+
+    function triggerAutoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveDataToLocal, 500); }
+
+    function loadDataFromLocal() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          if (new Date().getTime() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+            if(confirm("작성 중이던 내용을 이어서 작성하시겠습니까?")) {
+              answers = parsed.answers || {}; diseases = parsed.diseases || diseases;
+              currentTabId = parsed.currentTabId || 1; nextDiseaseId = parsed.nextDiseaseId || 2;
+              hasShownAddGuide = parsed.hasShownAddGuide || false;
+              
+              renderQuestions();
+              for(let i=0; i<6; i++) {
+                if(answers[i]) {
+                  const y = document.getElementById(`btn-yes-${i}`), n = document.getElementById(`btn-no-${i}`);
+                  if(answers[i] === 'yes') { y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-yes"; n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
+                  else { n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-no"; y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
+                }
+              }
+              document.getElementById('details-section').classList.toggle('hidden', !Object.values(answers).includes('yes'));
+              renderTabs(); renderTabContent(); showToast("이전 내용을 불러왔습니다. 🎉");
+              return;
+            } else { clearLocalData(); }
+          }
+        } catch (e) {}
+      }
+      renderQuestions();
+    }
+
+    function clearLocalData() { localStorage.removeItem(STORAGE_KEY); }
+
+    function init() { loadDataFromLocal(); renderTabs(); renderTabContent(); }
+
+    function renderQuestions() {
+      const container = document.getElementById('questions-container');
+      container.innerHTML = questions.map((q, index) => `
+        <div id="q-box-${index}" class="bg-white p-6 rounded-3xl card-shadow border border-slate-100 transition-all duration-300">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="bg-slate-800 text-white font-extrabold px-3 py-1 rounded-lg text-[13px]">Q${index+1}</span>
+            <span class="bg-blue-50 text-blue-600 font-extrabold px-3 py-1 rounded-lg text-[13px] border border-blue-100">
+              ${q.periodLabel} <span class="opacity-70 font-medium">(${q.dateBadge})</span>
+            </span>
+          </div>
+          <p class="font-bold text-slate-800 text-[17px] leading-[1.6] tracking-tight mb-5 px-1">${q.text}</p>
+          ${q.hasList ? `
+            <div class="bg-slate-50 rounded-xl p-3.5 mb-5 border border-slate-200">
+              <p class="text-[12px] font-bold text-slate-500 mb-2">※ 11대 중대질환 목록</p>
+              <div class="flex flex-wrap gap-1.5">
+                ${criticalIllnessesList.map(ill => `<span class="bg-white text-slate-600 px-2 py-1 rounded-md border border-slate-200 text-[13px] font-bold shadow-sm">${ill}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div class="flex gap-2.5">
+            <button onclick="setAnswer(${index}, 'yes')" id="btn-yes-${index}" class="flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected">예</button>
+            <button onclick="setAnswer(${index}, 'no')" id="btn-no-${index}" class="flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected">아니오</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function setAnswer(idx, val) {
+      answers[idx] = val;
+      const y = document.getElementById(`btn-yes-${idx}`), n = document.getElementById(`btn-no-${idx}`);
+      const qBox = document.getElementById(`q-box-${idx}`);
+      
+      qBox.classList.remove('box-error');
+
+      if(val === 'yes') { y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-yes"; n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
+      else { n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-no"; y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
+      
+      document.getElementById('details-section').classList.toggle('hidden', !Object.values(answers).includes('yes'));
+      renderTabs(); if(idx === 4) renderTabContent(); triggerAutoSave();
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('tabs-container');
+      const yesCount = Object.values(answers).filter(a => a === 'yes').length;
+      const shouldHighlightAdd = yesCount >= 2;
+
+      container.innerHTML = diseases.map((d, i) => {
+        const hasErr = Object.values(d.errors).includes(true);
+        return `<button onclick="switchTab(${d.id})" class="relative snap-start shrink-0 px-6 py-3.5 rounded-full text-[16px] transition-all ${d.id === currentTabId ? 'tab-active shadow-md' : 'tab-inactive'}">
+          건수 ${i+1} ${hasErr ? '<span class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-2 right-2 border-2 border-white animate-pulse"></span>' : ''}
+        </button>`;
+      }).join('') + `<button onclick="addDisease()" class="snap-start shrink-0 px-5 py-3.5 rounded-full text-[16px] font-bold border-2 ${shouldHighlightAdd ? 'border-red-500 text-red-600 bg-red-50 animate-pulse' : 'border-dashed border-slate-300 text-slate-500 bg-white'}">추가</button>`;
+    }
+
+    function switchTab(id) { currentTabId = id; renderTabs(); renderTabContent(); triggerAutoSave(); }
+    
+    function addDisease() { 
+      diseases.push({ id: nextDiseaseId++, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', startDate: '', endDate: '', outPatientDays: '', medicineDays: '', surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } }); 
+      currentTabId = diseases[diseases.length-1].id; renderTabs(); renderTabContent(); triggerAutoSave();
+    }
+    
+    function removeCurrentDisease() { 
+      if(diseases.length <= 1) return showToast("최소 1개 정보는 필요합니다.", true); 
+      diseases = diseases.filter(d => d.id !== currentTabId); currentTabId = diseases[0].id; 
+      renderTabs(); renderTabContent(); triggerAutoSave();
+    }
+
+    function setType(type) {
+      const d = diseases.find(d => d.id === currentTabId);
+      if(d) { d.type = type; d.name = ''; d.bodyPart = ''; d.errors.type = false; d.errors.name = false; d.errors.bodyPart = false; renderTabContent(); triggerAutoSave(); }
+    }
+    function setInjuryCategory(cat) {
+      const d = diseases.find(d => d.id === currentTabId);
+      if(d && d.type === 'injury') { d.injuryCategory = cat; renderTabContent(); triggerAutoSave(); }
+    }
+
+    function handleInput(val) {
+      updateField('name', val);
+      const d = diseases.find(d => d.id === currentTabId);
+      if(d.type === 'injury') return; 
+
+      const s = document.getElementById('suggest-box');
+      if(!val) { s.innerHTML = ''; return; }
+      let matched = [];
+      for(let k in diseaseLibrary) if(val.includes(k) || k.includes(val)) matched = [...matched, ...diseaseLibrary[k]];
+      matched = [...new Set(matched)].slice(0, 5);
+      s.innerHTML = matched.length ? `<div class="flex flex-wrap gap-2 mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100"><span class="w-full text-xs font-bold text-blue-500 mb-1">혹시 이 질병인가요? (터치)</span>${matched.map(m => `<div onclick="selectD('${m}')" class="suggest-chip">${m}</div>`).join('')}</div>` : '';
+    }
+
+    function selectD(n) { updateField('name', n); renderTabContent(); showToast("질병명이 자동 입력되었습니다."); triggerAutoSave(); }
+    
+    function updateField(f, v) { 
+      const d = diseases.find(d => d.id === currentTabId); 
+      if(d) {
+        d[f] = v;
+        if(f === 'name') d.errors.name = false;
+        if(f === 'bodyPart') d.errors.bodyPart = false;
+        if(f === 'startDate' || f === 'endDate') { d.errors.date = false; d.errors.sequence = false; renderTabs(); }
+        if(f === 'outPatientDays' || f === 'medicineDays' || f === 'hospitalDays') { d.errors.days = false; renderTabs(); }
+        triggerAutoSave();
+      }
+    }
+
+    function setAction(type, val) {
+      const d = diseases.find(d => d.id === currentTabId);
+      if(d) {
+        d[type] = val; d.errors.action = false;
+        if(type === 'hospitalized' && val === 'no') d.hospitalDays = '';
+        renderTabContent(); triggerAutoSave();
+      }
+    }
+
+    function renderTabContent() {
+      const container = document.getElementById('tab-content');
+      const d = diseases.find(d => d.id === currentTabId);
+      if(!d) return;
+      
+      container.innerHTML = `
+        <div class="flex justify-between items-center mb-7"><h3 class="font-extrabold text-slate-800 text-[20px]">상세 정보 작성</h3>${diseases.length > 1 ? `<button onclick="removeCurrentDisease()" class="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}</div>
+        
+        <div class="space-y-10">
+          <div class="${d.errors.type ? 'box-error p-4 -mx-4' : ''}">
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3">1. 어떻게 다치시거나 아프셨나요?</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="setType('disease')" class="flex flex-col items-center justify-center gap-1.5 h-[80px] rounded-2xl transition-all ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">
+                <span class="text-2xl leading-none">🦠</span><span class="text-[14px] font-bold">질병 (아픔)</span>
+              </button>
+              <button onclick="setType('injury')" class="flex flex-col items-center justify-center gap-1.5 h-[80px] rounded-2xl transition-all ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">
+                <span class="text-2xl leading-none">🩸</span><span class="text-[14px] font-bold">상해 (다침)</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="animate-slide-down">
+            ${d.type === 'disease' ? `
+              <label class="block text-[17px] font-extrabold text-slate-800 mb-3">2. 어떤 질병인가요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label>
+              <input type="text" placeholder="예: 위염, 장염, 디스크 등" value="${d.name}" oninput="handleInput(this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.name ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none focus:border-slate-800 transition-all font-bold placeholder-slate-400">
+              <div id="suggest-box"></div>
+            ` : `
+              <div class="space-y-6">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <label class="block text-[14px] font-bold text-slate-600 mb-2">교통사고 인가요?</label>
+                  <div class="flex gap-2">
+                    <button onclick="setInjuryCategory('general')" class="flex-1 py-2 rounded-xl text-[14px] transition-all border ${d.injuryCategory === 'general' ? 'chip-active' : 'chip-inactive bg-white'}">일반 다침</button>
+                    <button onclick="setInjuryCategory('traffic')" class="flex-1 py-2 rounded-xl text-[14px] transition-all border ${d.injuryCategory === 'traffic' ? 'chip-active' : 'chip-inactive bg-white'}">🚗 교통사고</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[17px] font-extrabold text-slate-800 mb-3">2-1. 어떻게 다치셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label>
+                  <input type="text" placeholder="${d.injuryCategory === 'traffic' ? '예: 후방추돌, 보행중 사고 등' : '예: 칼에 베임, 계단에서 넘어짐 등'}" value="${d.name}" oninput="updateField('name', this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.name ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none focus:border-slate-800 transition-all font-bold placeholder-slate-400">
+                </div>
+                <div>
+                  <label class="block text-[17px] font-extrabold text-slate-800 mb-3">2-2. 어느 부위를 다치셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label>
+                  <input type="text" placeholder="예: 오른쪽 검지 손가락, 뒷목 등" value="${d.bodyPart}" oninput="updateField('bodyPart', this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.bodyPart ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none focus:border-slate-800 transition-all font-bold placeholder-slate-400">
+                </div>
+              </div>
+            `}
+          </div>
+          
+          <div>
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">3. 언제 병원에 가셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label>
+            <div class="flex items-center gap-2">
+              <input type="month" value="${d.startDate}" onchange="updateField('startDate', this.value)" class="flex-1 h-[60px] bg-slate-50 border ${d.errors.date || d.errors.sequence ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[16px] outline-none font-bold">
+              <span class="text-slate-400 font-bold">~</span>
+              <input type="month" value="${d.endDate}" onchange="updateField('endDate', this.value)" class="flex-1 h-[60px] bg-slate-50 border ${d.errors.date || d.errors.sequence ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[16px] outline-none font-bold">
+            </div>
+            ${d.errors.sequence ? `<p class="text-red-600 text-[14px] font-bold mt-3 bg-red-50 p-2 rounded-lg">🚨 시작일이 종료일보다 늦을 수 없어요!</p>` : ''}
+          </div>
+
+          <div class="${d.errors.action && d.surgery === null ? 'box-error p-4 -mx-4' : ''}">
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3">4. 수술 하셨나요?</label>
+            <div class="flex gap-3">
+              <button onclick="setAction('surgery', 'yes')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.surgery === 'yes' ? 'btn-select-yes' : 'btn-unselected'}">🔪 했어요</button>
+              <button onclick="setAction('surgery', 'no')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.surgery === 'no' ? 'btn-select-no' : 'btn-unselected'}">안 했어요</button>
+            </div>
+          </div>
+
+          <div class="${d.errors.action && d.hospitalized === null ? 'box-error p-4 -mx-4' : ''}">
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3">5. 입원 하셨나요?</label>
+            <div class="flex gap-3">
+              <button onclick="setAction('hospitalized', 'yes')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.hospitalized === 'yes' ? 'btn-select-yes' : 'btn-unselected'}">🏥 했어요</button>
+              <button onclick="setAction('hospitalized', 'no')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.hospitalized === 'no' ? 'btn-select-no' : 'btn-unselected'}">안 했어요</button>
+            </div>
+            
+            ${d.hospitalized === 'yes' ? `
+              <div class="mt-4 bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center justify-between animate-slide-down">
+                <span class="text-[15px] font-bold text-red-700">며칠 입원하셨나요?</span>
+                <div class="flex items-center gap-2">
+                  <input type="tel" placeholder="0" value="${d.hospitalDays}" oninput="updateField('hospitalDays', this.value)" class="w-16 h-12 bg-white border border-red-200 rounded-xl text-center font-extrabold text-red-600 outline-none focus:ring-2 focus:ring-red-400 text-[18px]">
+                  <span class="font-bold text-red-700">일</span>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="${d.errors.days ? 'box-error p-4 -mx-4' : ''}">
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3">6. 통원 및 약 처방 일수 <span class="text-[13px] font-medium text-slate-400 ml-1">(숫자만)</span></label>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between">
+                <span class="font-bold text-slate-600">통원</span>
+                <div class="flex items-center gap-1"><input type="tel" placeholder="0" value="${d.outPatientDays}" oninput="updateField('outPatientDays', this.value)" class="w-14 h-10 bg-white border border-slate-200 rounded-lg text-center font-bold outline-none text-[16px]"><span class="font-bold text-slate-500">일</span></div>
+              </div>
+              <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between">
+                <span class="font-bold text-slate-600">약처방</span>
+                <div class="flex items-center gap-1"><input type="tel" placeholder="0" value="${d.medicineDays}" oninput="updateField('medicineDays', this.value)" class="w-14 h-10 bg-white border border-slate-200 rounded-lg text-center font-bold outline-none text-[16px]"><span class="font-bold text-slate-500">일</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[17px] font-extrabold text-slate-800 mb-3">7. 구체적인 치료 내용이나 특이사항</label>
+            <textarea rows="2" placeholder="${d.injuryCategory === 'traffic' ? '자동차보험 합의 여부, 합의금 등 자유롭게 적어주세요.' : '도수치료, 꿰맴(봉합) 등 자유롭게 적어주세요.'}" oninput="updateField('treatment', this.value)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[16px] outline-none resize-none leading-relaxed font-medium placeholder-slate-400"></textarea>
+          </div>
+          
+        </div>`;
+    }
+
+    function validateAndCopy() {
+      // 1. 기본 문항 누락 검증
+      let missingQ = null;
+      for(let i=0; i<6; i++) {
+        if(!answers[i]) { missingQ = i; break; }
+      }
+      
+      if(missingQ !== null) {
+        showToast(`🚨 ${missingQ + 1}번 질문에 '예' 또는 '아니오'를 선택해주세요!`, true);
+        const qBox = document.getElementById(`q-box-${missingQ}`);
+        qBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        qBox.classList.add('box-error');
+        setTimeout(() => qBox.classList.remove('box-error'), 1500); 
+        return;
+      }
+
+      // '예'가 없으면 바로 복사
+      if(!Object.values(answers).includes('yes')) {
+        clearLocalData();
+        return copyToClipboard();
+      }
+      
+      let ok = true, msg = "";
+      
+      // 2. 입력 필드 기본 검증
+      diseases.forEach(d => {
+        d.errors = { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false };
+        
+        if(d.name || d.bodyPart || d.startDate || d.outPatientDays || d.medicineDays || d.hospitalDays || d.surgery || d.hospitalized) {
+          if(!d.type) { d.errors.type = true; ok = false; msg = "질병인지 상해인지 선택해주세요."; }
+          if(d.type === 'disease' && !d.name.trim()) { d.errors.name = true; ok = false; msg = "어떤 질병인지 입력해주세요."; }
+          if(d.type === 'injury') {
+            if(!d.name.trim()) { d.errors.name = true; ok = false; msg = "어떤 사고였는지 내용을 입력해주세요."; }
+            if(!d.bodyPart.trim()) { d.errors.bodyPart = true; ok = false; msg = "어느 부위를 다치셨는지 입력해주세요."; }
+          }
+          if(!d.startDate || !d.endDate) { d.errors.date = true; ok = false; msg = "내원 기간을 빠짐없이 선택해주세요."; }
+          else if(new Date(d.startDate) > new Date(d.endDate)) { d.errors.sequence = true; ok = false; msg = "시작일이 종료일보다 늦습니다."; }
+          
+          if(d.surgery === null || d.hospitalized === null) { d.errors.action = true; ok = false; msg = "수술 및 입원 여부를 눌러주세요."; }
+          
+          const outD = parseInt(d.outPatientDays)||0, medD = parseInt(d.medicineDays)||0, hosD = parseInt(d.hospitalDays)||0;
+          if(outD === 0 && medD === 0 && hosD === 0 && d.surgery !== 'yes') { 
+            d.errors.days = true; ok = false; msg = "진료 일수(통원/약/입원) 중 하나는 꼭 입력해야 합니다."; 
+          }
+          if(d.hospitalized === 'yes' && hosD === 0) { d.errors.action = true; ok = false; msg = "입원 일수를 적어주세요."; }
+        } else {
+          d.errors.name = true; ok = false; msg = "상세 병력을 최소 1개 이상 입력해주세요.";
+        }
+      });
+      
+      // 3. 🌟 논리적 모순 검증 (답변 vs 날짜)
+      if(ok) {
+        for(let i=0; i<diseases.length; i++) {
+          let d = diseases[i];
+          if(!d.startDate || !d.endDate) continue;
+
+          // 3개월 검증
+          if(d.endDate >= limit3m || d.startDate >= limit3m) {
+            if(answers[0] !== 'yes' && answers[1] !== 'yes') {
+              d.errors.date = true; ok = false;
+              msg = "최근 3개월 이내 날짜가 있습니다. 1·2번 질문이나 날짜를 확인해주세요!";
+              if(currentTabId !== d.id) switchTab(d.id);
+              break;
+            }
+          }
+          // 5년/10년 검증
+          if(d.startDate < limit5y) {
+            if(answers[5] !== 'yes') {
+              d.errors.date = true; ok = false;
+              msg = "5년이 지난 날짜입니다! 연도 오타이거나 6번(10년 내) 질문을 확인해주세요.";
+              if(currentTabId !== d.id) switchTab(d.id);
+              break;
+            }
+          }
+          if(d.startDate < limit10y) {
+            d.errors.date = true; ok = false;
+            msg = "10년이 넘은 병력은 고지 대상이 아닐 수 있습니다. 연도를 다시 확인해주세요!";
+            if(currentTabId !== d.id) switchTab(d.id);
+            break;
+          }
+        }
+      }
+      
+      if(!ok) { 
+        showToast(msg, true); 
+        renderTabs(); renderTabContent(); 
+        setTimeout(() => { const el = document.querySelector('.input-error, .box-error'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 100);
+        return; 
+      }
+      
+      clearLocalData();
+      copyToClipboard();
+    }
+
+    function generate() {
+      let r = `📋 [계약 전 알릴 의무 리포트]\n작성일시: ${new Date().toLocaleString()}\n\n■ 기본 응답\n`;
+      for(let i=0; i<6; i++) r += `[Q${i+1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
+      
+      if(!Object.values(answers).includes('yes')) {
+        r += "\n✨ 이상 없음!\n";
+      } else {
+        r += "\n■ 상세 내용\n";
+        diseases.forEach((d, i) => {
+          const typeEmoji = d.type === 'disease' ? '🦠 질병' : d.injuryCategory === 'traffic' ? '🚗 상해(교통사고)' : '🩸 상해(일반)';
+          r += `\n< 건수 ${i+1} (${typeEmoji}) >\n`;
+          if(d.type === 'disease') {
+            r += `1. 질병명: ${d.name}\n`;
+          } else {
+            r += `1. 사고내용: ${d.name}\n`;
+            r += `2. 다친부위: ${d.bodyPart}\n`;
+          }
+          r += `${d.type === 'disease' ? '2' : '3'}. 내원기간: ${d.startDate}~${d.endDate}\n`;
+          r += `${d.type === 'disease' ? '3' : '4'}. 수술여부: ${d.surgery === 'yes' ? '🔪 수술 함' : '수술 안 함'}\n`;
+          r += `${d.type === 'disease' ? '4' : '5'}. 입원여부: ${d.hospitalized === 'yes' ? `🏥 입원 함 (${d.hospitalDays}일)` : '입원 안 함'}\n`;
+          r += `${d.type === 'disease' ? '5' : '6'}. 진료일수: 통원 ${d.outPatientDays||0}일 / 약처방 ${d.medicineDays||0}일\n`;
+          r += `${d.type === 'disease' ? '6' : '7'}. 기타치료: ${d.treatment || '없음'}\n`;
+        });
+      }
+
+      r += "\n===================\n";
+      r += "고지사항 작성 완료했습니다\n";
+      r += "확인 부탁드립니다! 😊\n";
+      
+      return r;
+    }
+
+    function copyToClipboard() {
+      const t = generate(); const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+      if(document.execCommand('copy')) showToast("복사 완료! 담당자 카톡에 붙여넣어 주세요.");
+      document.body.removeChild(ta);
+    }
+
+    function showToast(m, isE) {
+      const t = document.getElementById('toast'), c = document.getElementById('toast-content');
+      t.classList.remove('hidden'); t.classList.add('toast-enter');
+      c.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white bg-slate-800 border-l-4 ${isE?'border-red-500':'border-green-400'}`;
+      c.innerHTML = `${isE?'❌':'✅'} <span>${m}</span>`;
+      setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
+```
