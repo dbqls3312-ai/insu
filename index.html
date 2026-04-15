@@ -430,7 +430,7 @@
         r += d.type === 'disease' ? `1. 질병명: ${d.name}\n` : `1. 사고내용: ${d.name}\n2. 다친부위: ${d.bodyPart}\n`;
         r += `기간: ${d.startDate}~${d.endDate}\n수술: ${d.surgery === 'yes' ? 'O' : 'X'} / 입원: ${d.hospitalized === 'yes' ? `O (${d.hospitalDays}일)` : 'X'}\n진료: 통원 ${d.outPatientDays||0}일 / 약처방 ${d.medicineDays||0}일\n기타: ${d.treatment || '없음'}\n`;
       });
-      r += "\n===================\n담당자: 하나린보험 🌸 김유빈\n고지사항 작성을 완료했습니다. 확인 부탁드립니다! 😊\n";
+      r += "\n===================\n고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
       return r;
     }
 
