@@ -22,7 +22,7 @@
     
     .btn-select-yes { background-color: #fef2f2; border: 2px solid #ef4444; color: #dc2626; font-weight: 800; }
     .btn-select-no { background-color: #1e293b; border: 2px solid #1e293b; color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
-    .btn-unselected { background-color: #f8fafc; border: 2px solid #e2e8f0; color: #64748b; font-weight: 600; }
+    .btn-unselected { background-color: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
     .btn-type-selected { background-color: #1e293b; border: 2px solid #1e293b; color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
     
     .chip-active { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: 700; }
@@ -37,11 +37,8 @@
     @keyframes slideUpFade { 0% { transform: translate(-50%, 20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
     .toast-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     
-    /* 🌟 버튼 펄스 애니메이션 (강조용) */
     @keyframes gentlePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
     .animate-gentle-pulse { animation: gentlePulse 2s infinite ease-in-out; }
-    @keyframes bounce-x { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
-    .animate-bounce-x { animation: bounce-x 1s infinite; }
     
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .suggest-chip { background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 14px; padding: 8px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
@@ -50,7 +47,6 @@
 <body class="text-slate-800 antialiased selection:bg-red-200">
 
   <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen relative pb-32">
-    <!-- 상단 헤더 -->
     <div class="bg-gradient-to-b from-slate-800 to-slate-900 px-6 pt-10 pb-12 text-white rounded-b-[2.5rem] shadow-sm relative">
       <div id="save-indicator" class="absolute top-4 right-5 text-[11px] font-bold text-slate-400 flex items-center gap-1 transition-opacity duration-300 opacity-0">
         <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>자동저장 됨
@@ -60,20 +56,11 @@
     </div>
 
     <div class="px-5 space-y-5 -mt-8 relative z-10">
-      <!-- 1~6번 질문 영역 -->
       <div id="questions-container" class="space-y-4"></div>
 
-      <!-- 상세 병력 섹션 -->
       <div id="details-section" class="hidden mt-10 pt-6">
-        <div class="mb-5 px-1 relative">
+        <div class="mb-5 px-1 relative text-center">
           <h2 class="text-[24px] font-extrabold text-slate-800 tracking-tight">상세 병력 입력</h2>
-          
-          <div class="mt-4 bg-red-50 border-2 border-red-200 p-4 rounded-2xl shadow-sm">
-            <p class="text-[15px] text-red-600 font-extrabold leading-relaxed flex items-start gap-2">
-              <span class="text-xl leading-none mt-0.5">🚨</span>
-              <span>병력이 여러 개라면 반드시 맨 아래 <span class="bg-white border border-red-300 text-red-600 px-2 py-0.5 rounded-lg shadow-sm mx-0.5">추가하기</span> 버튼을 눌러 각각 작성해주세요!</span>
-            </p>
-          </div>
         </div>
 
         <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 snap-x hide-scrollbar px-1" id="tabs-container"></div>
@@ -81,7 +68,6 @@
       </div>
     </div>
 
-    <!-- 하단 고정 제출 버튼 -->
     <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
       <button id="submit-btn" onclick="validateAndCopy()" class="w-full h-[64px] rounded-2xl font-extrabold text-[20px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all">
         <span id="submit-text">내용 복사해서 카톡으로 보내기</span>
@@ -122,17 +108,12 @@
     ];
 
     let answers = {};
-    let diseases = [{ 
-      id: 1, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', 
-      startDate: '', endDate: '', outPatientDays: '', medicineDays: '', 
-      surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', 
-      errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } 
-    }];
+    let diseases = [{ id: 1, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', startDate: '', endDate: '', outPatientDays: '', medicineDays: '', surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } }];
     let currentTabId = 1;
     let nextDiseaseId = 2;
     let saveTimeout;
 
-    const STORAGE_KEY = 'insurance_form_v3';
+    const STORAGE_KEY = 'insurance_form_v5';
 
     function saveDataToLocal() {
       const dataToSave = { answers, diseases, currentTabId, nextDiseaseId, timestamp: new Date().getTime() };
@@ -218,7 +199,7 @@
         return `<button onclick="switchTab(${d.id})" class="relative snap-start shrink-0 px-6 py-3.5 rounded-full text-[16px] transition-all ${d.id === currentTabId ? 'tab-active shadow-md' : 'tab-inactive'}">
           건수 ${i+1} ${hasErr ? '<span class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-2 right-2 border-2 border-white animate-pulse"></span>' : ''}
         </button>`;
-      }).join('') + `<button onclick="addDisease()" class="snap-start shrink-0 px-5 py-3.5 rounded-full text-[16px] font-bold border-2 border-dashed border-slate-300 text-slate-500 bg-white ml-2">추가</button>`;
+      }).join('');
     }
 
     function switchTab(id) { currentTabId = id; renderTabs(); renderTabContent(); triggerAutoSave(); }
@@ -230,11 +211,7 @@
       setTimeout(() => { document.getElementById('details-section').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
     }
     
-    function removeCurrentDisease() { 
-      if(diseases.length <= 1) return showToast("최소 1개 정보는 필요합니다.", true); 
-      diseases = diseases.filter(d => d.id !== currentTabId); currentTabId = diseases[0].id; 
-      renderTabs(); renderTabContent(); triggerAutoSave();
-    }
+    function removeCurrentDisease() { if(diseases.length <= 1) return showToast("최소 1개 정보는 필요합니다.", true); diseases = diseases.filter(d => d.id !== currentTabId); currentTabId = diseases[0].id; renderTabs(); renderTabContent(); triggerAutoSave(); }
 
     function setType(type) {
       const d = diseases.find(d => d.id === currentTabId);
@@ -261,14 +238,7 @@
     
     function updateField(f, v) { 
       const d = diseases.find(d => d.id === currentTabId); 
-      if(d) {
-        d[f] = v;
-        if(f === 'name') d.errors.name = false;
-        if(f === 'bodyPart') d.errors.bodyPart = false;
-        if(f === 'startDate' || f === 'endDate') { d.errors.date = false; d.errors.sequence = false; renderTabs(); }
-        if(f === 'outPatientDays' || f === 'medicineDays' || f === 'hospitalDays') { d.errors.days = false; renderTabs(); }
-        triggerAutoSave();
-      }
+      if(d) { d[f] = v; if(f === 'name') d.errors.name = false; if(f === 'bodyPart') d.errors.bodyPart = false; if(f === 'startDate' || f === 'endDate') { d.errors.date = false; d.errors.sequence = false; renderTabs(); } if(f === 'outPatientDays' || f === 'medicineDays' || f === 'hospitalDays') { d.errors.days = false; renderTabs(); } triggerAutoSave(); }
     }
 
     function setAction(type, val) {
@@ -282,7 +252,7 @@
       if(!d) return;
       
       container.innerHTML = `
-        <div class="flex justify-between items-center mb-7"><h3 class="font-extrabold text-slate-800 text-[20px]">상세 정보 작성</h3>${diseases.length > 1 ? `<button onclick="removeCurrentDisease()" class="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}</div>
+        <div class="flex justify-between items-center mb-7"><h3 class="font-extrabold text-slate-800 text-[20px]">건수 ${diseases.findIndex(x=>x.id===d.id)+1} 상세 작성</h3>${diseases.length > 1 ? `<button onclick="removeCurrentDisease()" class="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}</div>
         
         <div class="space-y-10">
           <div class="${d.errors.type ? 'box-error p-4 -mx-4' : ''}">
@@ -368,10 +338,9 @@
             <textarea rows="2" placeholder="자유롭게 적어주세요." oninput="updateField('treatment', this.value)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[16px] outline-none resize-none font-medium"></textarea>
           </div>
           
-          <!-- 🌟 폼 마지막에 위치한 추가 유도 버튼 -->
-          <div class="pt-6 border-t border-slate-200 mt-8">
+          <div class="pt-10 border-t border-slate-200 mt-8">
             <p class="text-[14px] text-red-600 font-bold text-center mb-3">🚨 고지할 병력이 더 남아있나요?</p>
-            <button onclick="addDisease()" class="w-full h-[60px] rounded-2xl font-extrabold text-[17px] bg-white border-2 border-slate-800 text-slate-800 shadow-sm animate-gentle-pulse flex items-center justify-center gap-2">
+            <button onclick="addDisease()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-white border-2 border-slate-800 text-slate-800 shadow-sm animate-gentle-pulse flex items-center justify-center gap-2">
               ➕ 새로운 병력 추가하기
             </button>
           </div>
@@ -412,6 +381,7 @@
           if(!d.startDate) continue;
           if((d.endDate >= limit3m || d.startDate >= limit3m) && (answers[0] !== 'yes' && answers[1] !== 'yes')) { d.errors.date = true; ok = false; msg = "3개월 내 내역입니다. 1·2번 질문을 확인하세요!"; break; }
           if(d.startDate < limit5y && answers[5] !== 'yes' && answers[4] !== 'yes' && answers[3] !== 'yes') { d.errors.date = true; ok = false; msg = "5년이 지난 내역입니다. 질문 답변을 확인하세요!"; break; }
+          if(d.startDate < limit10y) { d.errors.date = true; ok = false; msg = "10년이 넘은 병력입니다. 연도를 확인해주세요!"; break; }
         }
       }
       
