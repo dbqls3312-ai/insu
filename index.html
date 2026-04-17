@@ -108,7 +108,6 @@
 
     const criticalIllnessesList = ["암", "백혈병", "고혈압", "협심증", "심근경색", "심장판막증", "간경화증", "뇌졸중증", "당뇨병", "에이즈", "직장/항문질환"];
 
-    // 🌟 도움말 가이드(desc) 데이터가 추가된 1~6번 질문지
     const questions = [
       { 
         periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", 
@@ -125,7 +124,7 @@
         text: "의사로부터 진찰 또는 검사를 통하여 추가검사(재검사)를 받은 사실이 있습니까?", 
         limit: limit1y, limitMsg: "1년 이내 내역을 적어주세요.",
         desc: [
-          "<strong class='text-blue-600'>추가검사란?</strong> 검사결과 이상 소견이 확인되어 보다 정확한 진단을 위해 시행한 검사. (단, 병증 치료 필요 없이 유지되는 정기검사/추적관찰은 제외)"
+          "<strong class='text-blue-600'>추가검사란?</strong> 검사결과 이상 소견이 확인되어 보다 정확한 진단을 위해 시행한 검사. (정기검사/추적관찰은 제외)"
         ]
       },
       { 
@@ -147,7 +146,7 @@
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v6';
+    const STORAGE_KEY = 'insurance_wizard_v7';
 
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
     
@@ -216,7 +215,6 @@
           
           <p class="font-bold text-slate-800 text-[18px] leading-relaxed tracking-tight mb-5 px-1">${q.text}</p>
           
-          <!-- 🌟 보기 좋게 추가된 질문 도움말 가이드 -->
           ${q.desc ? `
             <div class="bg-blue-50/50 rounded-2xl p-4 mb-6 border border-blue-100 space-y-2.5 shadow-sm">
               ${q.desc.map(d => `
@@ -326,7 +324,7 @@
           <div class="flex justify-between items-center mb-6">
             <div>
               <h3 class="font-extrabold text-slate-800 text-[18px]">상세 정보 작성</h3>
-              <p class="text-[13px] text-blue-600 font-bold mt-1">※ 질문지에서'예'라고 체크하신 항목만 적어주세요!</p>
+              <p class="text-[13px] text-blue-600 font-bold mt-1">※ 질문지에서 '예'라고 체크하신 항목만 적어주세요!</p>
             </div>
             ${stepDiseases.length > 1 ? `<button onclick="removeDisease(${d.id})" class="text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}
           </div>
@@ -335,26 +333,27 @@
             <div class="${d.typeError ? 'box-error p-3 -mx-3 rounded-2xl' : ''}">
               <label class="block text-[15px] font-bold text-slate-700 mb-2">1. 분류</label>
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="updateD('type', 'disease')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">🦠 질병(아픔)</button>
-                <button onclick="updateD('type', 'injury')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">🩸 상해(다침)</button>
+                <button onclick="updateD('type', 'disease'); render(false);" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">🦠 질병(아픔)</button>
+                <button onclick="updateD('type', 'injury'); render(false);" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">🩸 상해(다침)</button>
               </div>
             </div>
 
             ${isQ5 && d.type === 'disease' ? `
               <div class="bg-red-50/50 p-4 rounded-2xl border border-red-100">
-                <label class="block text-[13px] font-bold text-red-600 mb-2">🚨 11대 질환 해당 여부</label>
+                <label class="block text-[13px] font-bold text-red-600 mb-2">🚨 11대 질환 해당 여부 (다중선택)</label>
                 <div class="flex flex-wrap gap-2">${criticalIllnessesList.map(ill => `<button onclick="toggleCritical('${ill}')" class="px-3 py-2 rounded-xl text-[13px] font-bold border transition-all ${d.criticalIllnesses.includes(ill) ? 'chip-active' : 'chip-inactive bg-white'}">${ill}</button>`).join('')}</div>
               </div>` : ''}
 
             <div>
               <label class="block text-[15px] font-bold text-slate-700 mb-2">2. ${d.type === 'disease' ? '어떤 질병인가요?' : '어떻게 다치셨나요?'} <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
-              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 대장용종 제거' : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+              <!-- 🌟 oninput에서 render(false)를 완전히 제거하고 DOM 조작만 하도록 수정 (키보드 이탈 방지) -->
+              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 대장용종 제거' : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="this.classList.remove('input-error'); handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
               <div id="suggest-box"></div>
               
               ${d.type === 'injury' ? `
                 <div class="mt-4">
                   <label class="block text-[15px] font-bold text-slate-700 mb-2">2-1. 어느 부위를 다치셨나요? <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
-                  <input type="text" placeholder="예: 오른쪽 무릎, 허리" value="${d.bodyPart}" oninput="updateD('bodyPart', this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+                  <input type="text" placeholder="예: 오른쪽 무릎, 허리" value="${d.bodyPart}" oninput="this.classList.remove('input-error'); updateD('bodyPart', this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
                 </div>
               ` : ''}
             </div>
@@ -362,9 +361,9 @@
             <div>
               <label class="block text-[15px] font-bold text-slate-700 mb-2">3. 언제 병원에 가셨나요? <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
               <div class="flex items-center gap-2">
-                <input type="month" value="${d.startDate}" onchange="updateD('startDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+                <input type="month" value="${d.startDate}" oninput="this.classList.remove('input-error')" onchange="updateD('startDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
                 <span class="text-slate-400 font-bold">~</span>
-                <input type="month" value="${d.endDate}" onchange="updateD('endDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+                <input type="month" value="${d.endDate}" oninput="this.classList.remove('input-error')" onchange="updateD('endDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
               </div>
               ${d.sequenceError ? `<p class="text-red-600 text-[13px] font-bold mt-2">🚨 시작일이 종료일보다 나중입니다!</p>` : ''}
             </div>
@@ -377,7 +376,7 @@
               </div>
               
               <div class="flex flex-col gap-3">
-                <button onclick="toggleD('isHospitalized')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isHospitalized ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                <button onclick="toggleD('isHospitalized'); render(false);" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isHospitalized ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
                   <span class="flex items-center gap-2">🏥 입원하셨나요?</span>
                   <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isHospitalized ? '네 (O)' : '아니오 (X)'}</span>
                 </button>
@@ -392,7 +391,7 @@
                   </div>
                 ` : ''}
 
-                <button onclick="toggleD('isSurgery')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isSurgery ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                <button onclick="toggleD('isSurgery'); render(false);" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isSurgery ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
                   <span class="flex items-center gap-2">🔪 수술하셨나요?</span>
                   <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isSurgery ? '네 (O)' : '아니오 (X)'}</span>
                 </button>
@@ -418,6 +417,7 @@
       return tabsHtml + formHtml;
     }
 
+    // 🌟 핵심: 텍스트 입력 시 절대 화면을 새로 그리지 않도록 로직 분리
     function updateD(f, v) { 
       const d = diseases.find(d => d.id === currentTabId); 
       if(d) { 
@@ -425,7 +425,7 @@
         if(f==='name') d.nameError=false; 
         if(f==='startDate'||f==='endDate') { d.dateError=false; d.sequenceError=false; }
         if(f==='outPatientDays'||f==='medicineDays'||f==='hospitalDays') d.daysError=false;
-        render(false); 
+        saveData(); // 화면은 그리지 않고 데이터만 저장
       } 
     }
     
@@ -435,7 +435,7 @@
         d[f] = !d[f]; 
         if(f==='isHospitalized'&&!d[f]) d.hospitalDays=''; 
         d.daysError=false; 
-        render(false); 
+        saveData(); 
       } 
     }
     
@@ -444,7 +444,7 @@
       if(d) { 
         if(d.criticalIllnesses.includes(i)) d.criticalIllnesses = d.criticalIllnesses.filter(x=>x!==i); 
         else d.criticalIllnesses.push(i); 
-        render(false); 
+        render(false); // 칩 색상 변경을 위해 랜더링
       } 
     }
 
@@ -452,6 +452,7 @@
       updateD('name', val);
       const d = diseases.find(d => d.id === currentTabId);
       if(d && d.type === 'injury') return;
+      
       const box = document.getElementById('suggest-box');
       if(!val) { box.innerHTML = ''; return; }
       
@@ -464,8 +465,20 @@
       matched = [...new Set(matched)].slice(0, 6);
       
       if(matched.length) {
-        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`;
+        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="selectDisease('${m}')" class="suggest-chip">${m}</div>`).join('')}</div>`;
       } else box.innerHTML = '';
+    }
+
+    // 🌟 질병 칩 선택 시 화면에 반영되도록 별도 함수 생성
+    function selectDisease(name) {
+      const d = diseases.find(d => d.id === currentTabId);
+      if (d) {
+        d.name = name;
+        d.nameError = false;
+        saveData();
+        render(false); // 칩을 누르면 키보드가 내려가도 상관없으니 화면 갱신
+        showToast("질병명이 자동 입력되었습니다.");
+      }
     }
 
     function renderSummaryView() {
@@ -614,7 +627,7 @@
         });
       }
 
-      r += "\n===================\n위와 같이 고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
+      r += "\n========================\n위와 같이 고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
       return r;
     }
 
