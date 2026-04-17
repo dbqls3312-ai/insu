@@ -49,29 +49,37 @@
 
   <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen flex flex-col relative pb-32 overflow-hidden">
     
-    <!-- 상단 진행바 및 뒤로가기 헤더 -->
     <div class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div class="flex items-center justify-between px-5 h-14">
-        <!-- 🌟 버튼처럼 확 눈에 띄게 강화된 뒤로가기 버튼 -->
         <button id="back-btn" onclick="goBack()" class="text-slate-700 bg-slate-200/70 font-extrabold px-3 py-1.5 -ml-2 flex items-center gap-1 rounded-xl active:scale-90 transition-all shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
           <span class="text-[13px]">이전</span>
         </button>
-        <span id="header-title" class="font-extrabold text-[16px]">계약 전 알릴 의무</span>
-        <div class="w-14"></div> <!-- 중앙 정렬 맞춤용 여백 -->
+        <span id="header-title" class="font-extrabold text-[16px] truncate mx-2">계약 전 알릴 의무</span>
+        <!-- 🌟 새롭게 추가된 리셋 버튼 (모달 에러 방지용) -->
+        <button onclick="resetAll()" class="text-[12px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg active:scale-95 transition-all flex items-center gap-1 shrink-0">
+          ↻ 리셋
+        </button>
       </div>
       <div class="w-full bg-slate-100 h-1.5">
         <div id="progress-bar" class="bg-blue-600 h-full transition-all duration-500 ease-out w-[0%] rounded-r-full"></div>
       </div>
     </div>
 
-    <!-- 메인 컨텐츠 렌더링 영역 -->
-    <div id="app-container" class="px-5 pt-6 pb-10 flex-1"></div>
+    <div id="app-container" class="px-5 pt-6 pb-10 flex-1">
+      <!-- 자바스크립트 로딩 전 빈 화면 방지용 스켈레톤 UI -->
+      <div class="animate-pulse bg-white p-7 rounded-[1.5rem] h-64 mt-4 card-shadow border border-slate-100">
+        <div class="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+        <div class="h-6 bg-slate-200 rounded w-3/4 mb-8"></div>
+        <div class="h-12 bg-slate-200 rounded-2xl w-full mb-3"></div>
+        <div class="h-12 bg-slate-200 rounded-2xl w-full"></div>
+      </div>
+    </div>
 
-    <!-- 하단 고정 액션 버튼 -->
     <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
-      <button id="action-btn" onclick="handleActionClick()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-        <span id="action-text">다음 질문</span>
+      <!-- 🌟 초기 렌더링 시 빨간 버튼 방지 (회색으로 시작) -->
+      <button id="action-btn" onclick="handleActionClick()" disabled class="w-full h-[60px] rounded-2xl font-bold text-[18px] bg-slate-200 text-slate-400 cursor-not-allowed transition-all flex items-center justify-center gap-2">
+        <span id="action-text">앱을 준비 중입니다...</span>
       </button>
     </div>
   </div>
@@ -129,12 +137,12 @@
         text: "의사로부터 진찰 또는 검사를 통하여 추가검사(재검사)를 받은 사실이 있습니까?", 
         limit: limit1y, limitMsg: "1년 이내 내역을 적어주세요.",
         desc: [
-          "<strong class='text-blue-600'>추가검사란?</strong> 검사결과 이상 소견이 확인되어 보다 정확한 진단을 위해 시행한 검사. (정기검사/추적관찰은 제외)"
+          "<strong class='text-blue-600'>추가검사란?</strong> 검사결과 이상 소견이 확인되어 보다 정확한 진단을 위해 시행한 검사. (단, 정기검사/추적관찰은 제외)"
         ]
       },
       { 
         periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", 
-        text: "입원, 수술, 계속하여 7일 이상 치료, 계속하여 30일 이상 투약 사실이 있습니까?", 
+        text: "입원, 수술, 계속하여 7일 이상 치료, 30일 이상 투약 사실이 있습니까?", 
         limit: limit5y, limitMsg: "5년 이내 내역을 적어주세요.",
         desc: [
           "<strong class='text-blue-600'>'계속하여'란?</strong> 같은 원인으로 치료를 시작한 후 완료일까지 실제 치료/투약받은 일수를 의미함!"
@@ -151,31 +159,47 @@
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v8';
+    const STORAGE_KEY = 'insurance_wizard_v9_safe';
 
-    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
-    
-    function loadData() { 
-      const s = localStorage.getItem(STORAGE_KEY); 
-      if(s) { 
-        try { 
-          const p = JSON.parse(s); 
-          if(confirm("작성 중이던 내용을 이어서 작성하시겠습니까?")) {
-            step = p.step||0; view = p.view||'q'; answers = p.answers||{}; diseases = p.diseases||[]; 
-            currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId||1;
-            render(false); return;
-          } else { localStorage.removeItem(STORAGE_KEY); }
-        } catch(e){} 
+    // 🌟 버그 픽스: 카톡 브라우저에서 스토리지 에러 방어
+    function saveData() { 
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); 
+      } catch (e) {
+        console.warn("로컬 스토리지를 사용할 수 없습니다.");
       }
+    }
+    
+    // 🌟 버그 픽스: confirm 팝업 제거하고 조용히 복구
+    function loadData() { 
+      let loaded = false;
+      try { 
+        const s = localStorage.getItem(STORAGE_KEY); 
+        if(s) { 
+          const p = JSON.parse(s); 
+          step = p.step||0; view = p.view||'q'; answers = p.answers||{}; diseases = p.diseases||[]; 
+          currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId||1;
+          loaded = true;
+        } 
+      } catch(e){} 
+      
       render(false); 
+      if(loaded && step > 0) showToast("작성 중이던 내용을 불러왔습니다.");
     }
 
-    // 🌟 핵심 방어 로직: 폰의 '뒤로가기' 하드웨어 버튼 후킹
+    // 🌟 새 기능: 수동 리셋 (초기화) 버튼 기능
+    function resetAll() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+      step = 0; view = 'q'; answers = {}; diseases = []; currentTabId = null; nextDiseaseId = 1;
+      render(true);
+      showToast("처음부터 다시 시작합니다.");
+    }
+
+    // 뒤로가기 하드웨어 버튼 방어
     window.addEventListener('popstate', function(event) {
-      // 폼 작성 중일 때 폰 뒤로가기 버튼을 누르면 브라우저 밖으로 튕기지 않고, 앱 내 이전 단계로 이동
       if (step > 0 || view === 'd') {
-        history.pushState(null, null, location.href); // 상태를 다시 밀어넣어 다음 뒤로가기도 방어
-        goBack(); // 우리 앱의 커스텀 뒤로가기 로직 실행
+        history.pushState(null, null, location.href); 
+        goBack(); 
       }
     });
 
@@ -273,7 +297,7 @@
           diseases = diseases.filter(d => d.qIndex !== step); 
           goNext();
         }
-      }, 250); 
+      }, 200); 
     }
 
     function ensureDiseaseExistsForStep(qIdx) {
@@ -389,7 +413,7 @@
               </div>
               
               <div class="flex flex-col gap-3">
-                <button onclick="toggleD('isHospitalized'); render(false);" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isHospitalized ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                <button onclick="toggleD('isHospitalized')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isHospitalized ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
                   <span class="flex items-center gap-2">🏥 입원하셨나요?</span>
                   <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isHospitalized ? '네 (O)' : '아니오 (X)'}</span>
                 </button>
@@ -404,7 +428,7 @@
                   </div>
                 ` : ''}
 
-                <button onclick="toggleD('isSurgery'); render(false);" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isSurgery ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                <button onclick="toggleD('isSurgery')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isSurgery ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
                   <span class="flex items-center gap-2">🔪 수술하셨나요?</span>
                   <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isSurgery ? '네 (O)' : '아니오 (X)'}</span>
                 </button>
@@ -430,6 +454,7 @@
       return tabsHtml + formHtml;
     }
 
+    // 🌟 입력할 때는 화면(DOM)을 새로고침 하지 않고, 데이터만 조용히 저장! (키보드 닫힘 버그 해결)
     function updateD(f, v) { 
       const d = diseases.find(d => d.id === currentTabId); 
       if(d) { 
@@ -437,17 +462,18 @@
         if(f==='name') d.nameError=false; 
         if(f==='startDate'||f==='endDate') { d.dateError=false; d.sequenceError=false; }
         if(f==='outPatientDays'||f==='medicineDays'||f==='hospitalDays') d.daysError=false;
-        saveData(); 
+        saveData(); // 데이터만 저장하고 render()는 호출하지 않음
       } 
     }
     
+    // 버튼, 체크박스 등 키보드와 상관없는 요소만 render() 호출
     function toggleD(f) { 
       const d = diseases.find(d => d.id === currentTabId); 
       if(d) { 
         d[f] = !d[f]; 
         if(f==='isHospitalized'&&!d[f]) d.hospitalDays=''; 
         d.daysError=false; 
-        saveData(); 
+        render(false); 
       } 
     }
     
@@ -464,6 +490,7 @@
       updateD('name', val);
       const d = diseases.find(d => d.id === currentTabId);
       if(d && d.type === 'injury') return;
+      
       const box = document.getElementById('suggest-box');
       if(!val) { box.innerHTML = ''; return; }
       
@@ -476,8 +503,15 @@
       matched = [...new Set(matched)].slice(0, 6);
       
       if(matched.length) {
-        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`;
+        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="selectDisease('${m}')" class="suggest-chip">${m}</div>`).join('')}</div>`;
       } else box.innerHTML = '';
+    }
+
+    // 추천 칩을 눌렀을 때만 화면 갱신
+    function selectDisease(name) {
+      updateD('name', name);
+      render(false);
+      showToast("병명이 입력되었습니다.");
     }
 
     function renderSummaryView() {
@@ -633,13 +667,12 @@
     function showToast(m, isE) {
       const t = document.getElementById('toast'), c = document.getElementById('toast-content');
       t.classList.remove('hidden'); t.classList.add('toast-enter');
-      c.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white bg-slate-800 border-l-4 ${isE?'border-red-500':'border-green-400'}`;
+      c.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[14px] font-bold text-white bg-slate-800 border-l-4 ${isE?'border-red-500':'border-green-400'}`;
       c.innerHTML = `${isE?'❌':'✅'} <span>${m}</span>`;
       setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3000);
     }
 
     function init() { 
-      // 🌟 앱 시작할 때 History 상태 하나 밀어넣어서 '뒤로가기' 튕김 1차 방어
       history.pushState(null, null, location.href); 
       loadData(); 
     }
