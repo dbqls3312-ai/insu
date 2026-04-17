@@ -1,435 +1,593 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>계약 전 알릴 의무 사항</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" as="style" crossorigin
-    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
-    body {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      background-color: #f3f4f6;
-      word-break: keep-all;
-    }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f3f4f6; word-break: keep-all; overflow-x: hidden; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .card-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
+    
+    .tab-active { background-color: #1e293b; color: white; font-weight: 700; }
+    .tab-inactive { background-color: white; color: #64748b; font-weight: 600; border: 1px solid #e2e8f0; }
+    .chip-active { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; font-weight: 700; }
+    .chip-inactive { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+    
+    .btn-type-selected { background-color: #1e293b; border: 2px solid #1e293b; color: white; font-weight: 800; box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15); }
+    .btn-unselected { background-color: #f8fafc; border: 2px solid #e2e8f0; color: #64748b; font-weight: 600; transition: all 0.2s; }
+    .btn-unselected:active { background-color: #e2e8f0; }
+    
+    .action-btn-on { background-color: #ef4444; color: white; border-color: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+    .action-btn-off { background-color: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+    
+    .input-error { border-color: #ef4444 !important; background-color: #fef2f2 !important; animation: shake 0.5s both; }
+    .box-error { border: 2px solid #ef4444 !important; background-color: #fef2f2 !important; animation: shake 0.5s both; }
+    
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+    @keyframes slideUpFade { 0% { transform: translate(-50%, 20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+    .toast-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    @keyframes swipeLeft { 0% { opacity: 0; transform: translateX(60px); } 100% { opacity: 1; transform: translateX(0); } }
+    .animate-swipe-left { animation: swipeLeft 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
+    
+    /* 🌟 버튼 숨쉬는 애니메이션 */
+    @keyframes gentlePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+    .animate-gentle-pulse { animation: gentlePulse 2s infinite ease-in-out; }
 
-    .hide-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .hide-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    .card-shadow {
-      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-    }
-
-    .tab-active {
-      background-color: #1e293b;
-      color: white;
-      font-weight: 700;
-    }
-
-    .tab-inactive {
-      background-color: white;
-      color: #64748b;
-      font-weight: 600;
-      border: 1px solid #e2e8f0;
-    }
-
-    .btn-select-yes {
-      background-color: #fef2f2;
-      border: 2px solid #ef4444;
-      color: #dc2626;
-      font-weight: 800;
-    }
-
-    .btn-select-no {
-      background-color: #1e293b;
-      border: 2px solid #1e293b;
-      color: white;
-      font-weight: 800;
-      box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15);
-    }
-
-    .btn-unselected {
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
-      color: #64748b;
-      font-weight: 600;
-    }
-
-    .btn-type-selected {
-      background-color: #1e293b;
-      border: 2px solid #1e293b;
-      color: white;
-      font-weight: 800;
-      box-shadow: 0 4px 10px rgba(30, 41, 59, 0.15);
-    }
-
-    .chip-active {
-      background-color: #fee2e2;
-      color: #dc2626;
-      border-color: #fca5a5;
-      font-weight: 700;
-    }
-
-    .chip-inactive {
-      background-color: #f8fafc;
-      color: #64748b;
-      border-color: #e2e8f0;
-    }
-
-    .input-error {
-      border-color: #ef4444 !important;
-      background-color: #fef2f2 !important;
-      animation: shake 0.5s both;
-    }
-
-    .box-error {
-      border: 2px solid #ef4444 !important;
-      background-color: #fef2f2 !important;
-      animation: shake 0.5s both;
-      border-radius: 1.5rem;
-    }
-
-    @keyframes shake {
-
-      10%,
-      90% {
-        transform: translate3d(-1px, 0, 0);
-      }
-
-      20%,
-      80% {
-        transform: translate3d(2px, 0, 0);
-      }
-
-      30%,
-      50%,
-      70% {
-        transform: translate3d(-4px, 0, 0);
-      }
-
-      40%,
-      60% {
-        transform: translate3d(4px, 0, 0);
-      }
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-slide-down {
-      animation: slideDown 0.3s ease-out forwards;
-    }
-
-    @keyframes slideUpFade {
-      0% {
-        transform: translate(-50%, 20px);
-        opacity: 0;
-      }
-
-      100% {
-        transform: translate(-50%, 0);
-        opacity: 1;
-      }
-    }
-
-    .toast-enter {
-      animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes gentlePulse {
-
-      0%,
-      100% {
-        transform: scale(1);
-      }
-
-      50% {
-        transform: scale(1.02);
-      }
-    }
-
-    .animate-gentle-pulse {
-      animation: gentlePulse 2s infinite ease-in-out;
-    }
-
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .suggest-chip {
-      background-color: #eff6ff;
-      color: #2563eb;
-      border: 1px solid #bfdbfe;
-      font-size: 14px;
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .suggest-chip { background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 13.5px; padding: 6px 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .suggest-chip:active { transform: scale(0.95); background-color: #dbeafe; }
   </style>
 </head>
-
 <body class="text-slate-800 antialiased selection:bg-red-200">
 
-  <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen relative pb-32">
-    <!-- 상단 헤더 -->
-    <div
-      class="bg-gradient-to-b from-slate-800 to-slate-900 px-6 pt-10 pb-12 text-white rounded-b-[2.5rem] shadow-sm relative">
-      <div id="save-indicator"
-        class="absolute top-4 right-5 text-[11px] font-bold text-slate-400 flex items-center gap-1 transition-opacity duration-300 opacity-0">
-        <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>자동저장 됨
+  <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen flex flex-col relative pb-32 overflow-hidden">
+    
+    <!-- 상단 진행바 및 뒤로가기 헤더 -->
+    <div class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+      <div class="flex items-center justify-between px-5 h-14">
+        <button id="back-btn" onclick="goBack()" class="text-slate-500 font-bold p-2 -ml-2 flex items-center gap-1 active:scale-90 transition-transform">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <span id="header-title" class="font-extrabold text-[16px]">계약 전 알릴 의무</span>
+        <div class="w-9"></div>
       </div>
-      <h1 class="text-[28px] font-extrabold tracking-tight mb-2 mt-2">계약 전 알릴 의무</h1>
-      <p class="text-slate-300 text-[16px] font-medium leading-[1.6]">고객님의 안전한 보상을 위해<br>질문에 하나씩 답해주세요.</p>
-    </div>
-
-    <div class="px-5 space-y-5 -mt-8 relative z-10">
-      <!-- 1~6번 질문 영역 -->
-      <div id="questions-container" class="space-y-4"></div>
-
-      <!-- 상세 병력 섹션 -->
-      <div id="details-section" class="hidden mt-10 pt-6">
-        <div class="mb-5 px-1 relative text-center">
-          <h2 class="text-[24px] font-extrabold text-slate-800 tracking-tight">상세 병력 입력</h2>
-        </div>
-
-        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-3 snap-x hide-scrollbar px-1" id="tabs-container">
-        </div>
-        <div id="tab-content" class="bg-white card-shadow rounded-3xl p-6 border border-slate-100 transition-all"></div>
+      <div class="w-full bg-slate-100 h-1.5">
+        <div id="progress-bar" class="bg-blue-600 h-full transition-all duration-500 ease-out w-[0%] rounded-r-full"></div>
       </div>
     </div>
 
-    <!-- 하단 고정 공유하기 버튼 -->
-    <div
-      class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
-      <button id="submit-btn" onclick="validateAndShare()"
-        class="w-full h-[64px] rounded-2xl font-extrabold text-[20px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
-          </path>
-        </svg>
-        <span id="submit-text">내용 공유하기 (카톡/문자)</span>
+    <!-- 메인 컨텐츠 렌더링 영역 -->
+    <div id="app-container" class="px-5 pt-6 pb-10 flex-1"></div>
+
+    <!-- 하단 고정 액션 버튼 -->
+    <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
+      <button id="action-btn" onclick="handleActionClick()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+        <span id="action-text">다음 질문</span>
       </button>
     </div>
   </div>
 
-  <div id="toast"
-    class="fixed top-12 left-1/2 transform -translate-x-1/2 hidden z-50 w-[90%] max-w-sm pointer-events-none">
-    <div id="toast-content"
-      class="flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white"></div>
+  <div id="toast" class="fixed top-12 left-1/2 transform -translate-x-1/2 hidden z-50 w-[90%] max-w-sm pointer-events-none">
+    <div id="toast-content" class="flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white"></div>
   </div>
 
   <script>
-    const diseaseLibrary = { "머리": ["두통", "편두통", "뇌진탕", "어지러움"], "두통": ["두통", "편두통", "어지러움"], "목": ["목디스크", "거북목", "편도염"], "어깨": ["오십견", "회전근개파열", "어깨충돌증후군", "석회성건염"], "팔": ["테니스엘보", "골프엘보", "손목터널증후군", "건초염"], "허리": ["디스크", "협착증", "요추염좌"], "무릎": ["관절염", "반월상연골파열", "십자인대파열", "슬개골탈구"], "다리": ["하지정맥류", "족저근막염", "아킬레스건염", "골절"], "위": ["위염", "위궤양", "역류성식도염"], "장": ["장염", "대장용종", "장폐색", "맹장염", "췌장염"], "감기": ["감기", "폐렴", "코로나", "비염"], "자궁": ["자궁근종", "자궁내막증", "자궁경부이형성증", "자궁선근증"], "갑상": ["갑상선결절", "갑상선기능항진증"], "임신": ["임신성당뇨", "임신중독증", "임신중빈혈", "입덧"], "우루사": ["만성간질환", "콜레스테롤 담석증", "알코올성 간질환", "담낭염", "C형 간염"] };
-
-    // 🌟 요청하신 대로 고혈압/판막증, 협심증/심근경색 순서로 2개씩 보이게 구성
-    const criticalIllnessesGroups = [
-      { category: "암/혈액", items: ["암", "백혈병"] },
-      { category: "심장/혈관", items: ["고혈압", "심장판막증", "협심증", "심근경색"] },
-      { category: "간/뇌/당뇨", items: ["간경화증", "뇌졸중증", "당뇨병"] },
-      { category: "기타", items: ["에이즈", "직장/항문질환"] }
-    ];
-
     const today = new Date();
     const formatDate = (d) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-    const calcDate = (m, y = 0) => { const d = new Date(today); d.setMonth(d.getMonth() - m); d.setFullYear(d.getFullYear() - y); return formatDate(d); };
-    const getMonthOffset = (m, y = 0) => { const d = new Date(today); d.setMonth(d.getMonth() - m); d.setFullYear(d.getFullYear() - y); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    const calcDate = (m, y=0) => { const d = new Date(today); d.setMonth(d.getMonth() - m); d.setFullYear(d.getFullYear() - y); return formatDate(d); };
+    const getMonthOffset = (m, y=0) => { const d = new Date(today); d.setMonth(d.getMonth() - m); d.setFullYear(d.getFullYear() - y); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    
     const date3m = calcDate(3); const limit3m = getMonthOffset(3);
     const date1y = calcDate(0, 1); const limit1y = getMonthOffset(0, 1);
     const date5y = calcDate(0, 5); const limit5y = getMonthOffset(0, 5);
     const date10y = calcDate(0, 10); const limit10y = getMonthOffset(0, 10);
 
+    const diseaseLibrary = {
+      "우루사": ["간수치상승", "지방간", "B형간염", "간염"], "고덱스": ["간수치상승", "지방간", "간염"],
+      "타이레놀": ["감기", "두통", "발열", "몸살"], "수면": ["불면증", "수면무호흡증", "수면다원검사", "수면제처방"],
+      "우울": ["우울증", "공황장애", "불면증", "신경안정제"], "검사": ["건강검진", "위내시경", "대장내시경", "초음파", "조직검사", "혈액검사", "MRI", "CT"],
+      "수치": ["간수치상승", "콜레스테롤상승", "혈당상승", "혈압상승"], "약": ["고혈압약", "당뇨약", "고지혈증약", "갑상선약"],
+      "머리": ["두통", "편두통", "뇌수막염", "어지럼증", "뇌진탕"], "두통": ["편두통", "긴장성두통", "군발두통"],
+      "허리": ["허리디스크", "척추관협착증", "요추염좌", "척추측만증"], "목": ["목디스크", "거북목증후군", "일자목", "편도염", "인후염"],
+      "어깨": ["오십견", "회전근개파열", "석회성건염", "어깨충돌증후군"], "위": ["위염", "위궤양", "역류성식도염", "위용종", "헬리코박터균", "소화불량"],
+      "장": ["장염", "대장용종", "과민성대장증후군", "치질(치핵/치루)", "맹장염", "대장염"], "간": ["지방간", "B형간염", "C형간염", "간경화", "간수치상승", "간혈관종"],
+      "피": ["고지혈증", "고혈압", "당뇨병", "고콜레스테롤혈증", "빈혈"], "혈압": ["고혈압", "고지혈증", "당뇨병", "협심증"],
+      "당뇨": ["당뇨병", "당뇨전단계", "임신성당뇨"], "감기": ["상기도감염", "코로나19", "독감", "폐렴", "기관지염", "비염", "천식"],
+      "기침": ["기관지염", "천식", "폐렴", "인후염", "역류성식도염"], "코": ["비염", "축농증(부비동염)", "코골이", "수면무호흡증"],
+      "귀": ["중이염", "외이도염", "이석증", "메니에르병", "이명"], "눈": ["백내장", "녹내장", "안구건조증", "결막염", "망막병증", "시력교정술"],
+      "여자": ["자궁근종", "난소낭종", "자궁내막증", "질염", "다낭성난소증후군", "방광염"], "자궁": ["자궁근종", "자궁경부이형성증", "자궁내막증", "자궁경부염"],
+      "가슴": ["유방결절", "유방섬유선종", "유방낭종", "협심증", "부정맥"], "갑상": ["갑상선결절", "갑상선기능항진증", "갑상선기능저하증", "갑상선염"],
+      "피부": ["아토피", "두드러기", "접촉성피부염", "습진", "무좀", "대상포진", "티눈"], "뼈": ["골절", "골다공증", "관절염", "통풍", "류마티스"],
+      "관절": ["퇴행성관절염", "류마티스관절염", "통풍", "십자인대파열", "반월상연골파열"], "소변": ["방광염", "요로결석", "전립선비대증", "전립선염", "신우신염"],
+      "치아": ["충치", "치주염", "임플란트", "사랑니발치", "치석제거"]
+    };
+
+    const criticalIllnessesList = ["암", "백혈병", "고혈압", "협심증", "심근경색", "심장판막증", "간경화증", "뇌졸중증", "당뇨병", "에이즈", "직장/항문질환"];
+
     const questions = [
-      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "병원에서 진찰, 검사, 치료, 약 처방 등을 받은 적이 있습니까?" },
-      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "혈압약, 수면제, 진통제 등 약물을 드신 적이 있습니까?" },
-      { periodLabel: "최근 1년 이내", dateBadge: date1y + " 이후", text: "의사로부터 진찰 또는 검사를 통하여 추가검사(재검사)를 받은 사실이 있습니까?" },
-      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "입원, 수술, 7일 이상 치료, 30일 이상 약 처방을 받은 적이 있습니까?" },
-      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "아래 11대 중대질환으로 진단, 치료, 입원, 수술, 정밀검사를 받은 적이 있습니까?", hasList: true },
-      { periodLabel: "최근 10년 이내", dateBadge: date10y + " 이후", text: "병원에서 진찰/검사를 받고 입원이나 수술을 한 적이 있습니까?" }
+      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "병원에서 진찰, 검사, 치료, 약 처방 등을 받은 적이 있습니까?", limit: limit3m, limitMsg: "3개월 이내 내역을 적어주세요." },
+      { periodLabel: "최근 3개월 이내", dateBadge: date3m + " 이후", text: "혈압약, 수면제, 진통제 등 약물을 드신 적이 있습니까?", limit: limit3m, limitMsg: "3개월 이내 내역을 적어주세요." },
+      { periodLabel: "최근 1년 이내", dateBadge: date1y + " 이후", text: "의사로부터 진찰 또는 검사를 통하여 추가검사(재검사)를 받은 사실이 있습니까?", limit: limit1y, limitMsg: "1년 이내 내역을 적어주세요." },
+      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "입원, 수술, 7일 이상 치료, 30일 이상 투약 사실이 있습니까?", limit: limit5y, limitMsg: "5년 이내 내역을 적어주세요." },
+      { periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", text: "아래 11대 질병(암, 고혈압, 당뇨 등)으로 진단/치료/입원 등을 받은 적이 있습니까?", hasList: true, limit: limit5y, limitMsg: "5년 이내 내역을 적어주세요." },
+      { periodLabel: "최근 10년 이내", dateBadge: date10y + " 이후", text: "병원에서 진찰/검사를 받고 입원이나 수술을 한 적이 있습니까?", limit: limit10y, limitMsg: "10년 이내 내역을 적어주세요." }
     ];
 
+    let step = 0; 
+    let view = 'q'; 
     let answers = {};
-    let diseases = [{ id: 1, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', startDate: '', endDate: '', outPatientDays: '', medicineDays: '', surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } }];
-    let currentTabId = 1; let nextDiseaseId = 2; let saveTimeout;
-    const STORAGE_KEY = 'insurance_form_v_final_secure';
+    let diseases = []; 
+    let currentTabId = null;
+    let nextDiseaseId = 1;
 
-    function saveDataToLocal() { const d = { answers, diseases, currentTabId, nextDiseaseId, timestamp: new Date().getTime() }; localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); const i = document.getElementById('save-indicator'); i.classList.remove('opacity-0'); setTimeout(() => i.classList.add('opacity-0'), 2000); }
-    function triggerAutoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(saveDataToLocal, 500); }
-    function loadDataFromLocal() { const s = localStorage.getItem(STORAGE_KEY); if (s) { try { const p = JSON.parse(s); if (new Date().getTime() - p.timestamp < 24 * 60 * 60 * 1000) { if (confirm("작성 중이던 내용을 이어서 작성하시겠습니까?")) { answers = p.answers || {}; diseases = p.diseases || diseases; currentTabId = p.currentTabId || 1; nextDiseaseId = p.nextDiseaseId || 2; renderQuestions(); for (let i = 0; i < 6; i++) { if (answers[i]) { const y = document.getElementById(`btn-yes-${i}`), n = document.getElementById(`btn-no-${i}`); if (answers[i] === 'yes') { y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-yes"; n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; } else { n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-no"; y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; } } } document.getElementById('details-section').classList.toggle('hidden', !Object.values(answers).includes('yes')); renderTabs(); renderTabContent(); return; } else { localStorage.removeItem(STORAGE_KEY); } } } catch (e) { } } renderQuestions(); }
+    const STORAGE_KEY = 'insurance_wizard_v5';
 
-    function init() { loadDataFromLocal(); renderTabs(); renderTabContent(); }
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
+    
+    function loadData() { 
+      const s = localStorage.getItem(STORAGE_KEY); 
+      if(s) { 
+        try { 
+          const p = JSON.parse(s); 
+          if(confirm("작성 중이던 내용을 이어서 작성하시겠습니까?")) {
+            step = p.step||0; view = p.view||'q'; answers = p.answers||{}; diseases = p.diseases||[]; 
+            currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId||1;
+            render(false); return;
+          } else { localStorage.removeItem(STORAGE_KEY); }
+        } catch(e){} 
+      }
+      render(false); 
+    }
 
-    function renderQuestions() {
-      const container = document.getElementById('questions-container');
-      container.innerHTML = questions.map((q, index) => `
-        <div id="q-box-${index}" class="bg-white p-6 rounded-3xl card-shadow border border-slate-100 transition-all duration-300">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="bg-slate-800 text-white font-extrabold px-3 py-1 rounded-lg text-[13px]">Q${index + 1}</span>
-            <span class="bg-blue-50 text-blue-600 font-extrabold px-3 py-1 rounded-lg text-[13px] border border-blue-100">${q.periodLabel} <span class="opacity-70 font-medium">(${q.dateBadge})</span></span>
+    function render(animate = true) {
+      saveData();
+      const container = document.getElementById('app-container');
+      const headerTitle = document.getElementById('header-title');
+      const progressBar = document.getElementById('progress-bar');
+      const backBtn = document.getElementById('back-btn');
+
+      const progress = step === 6 ? 100 : Math.round((step / 6) * 100);
+      progressBar.style.width = `${progress}%`;
+
+      backBtn.style.visibility = (step === 0 && view === 'q') ? 'hidden' : 'visible';
+
+      container.classList.remove('animate-swipe-left');
+      if(animate) void container.offsetWidth; 
+      container.classList.add('animate-swipe-left');
+
+      if (step < 6) {
+        if (view === 'q') {
+          headerTitle.innerText = `질문 ${step + 1} / 6`;
+          container.innerHTML = renderQuestionView(step);
+          updateActionBtn('질문 선택', true); 
+        } else if (view === 'd') {
+          headerTitle.innerText = `상세 입력 (Q${step + 1})`;
+          ensureDiseaseExistsForStep(step);
+          container.innerHTML = renderDetailView(step);
+          // 마지막 질문(step 5)이면 '결과 확인하기', 아니면 '다음 질문으로'
+          updateActionBtn(step === 5 ? '결과 확인하기' : '다음 질문으로', false);
+        }
+      } else {
+        headerTitle.innerText = `작성 완료`;
+        container.innerHTML = renderSummaryView();
+        updateActionBtn('내용 공유하기 (카톡/문자)', false, true);
+      }
+    }
+
+    function renderQuestionView(idx) {
+      const q = questions[idx];
+      const yClass = answers[idx] === 'yes' ? 'bg-red-50 text-red-600 border-2 border-red-500 shadow-sm' : 'bg-white text-slate-500 border border-slate-200';
+      const nClass = answers[idx] === 'no' ? 'bg-slate-800 text-white border-2 border-slate-800 shadow-md' : 'bg-white text-slate-500 border border-slate-200';
+
+      return `
+        <div class="bg-white p-7 rounded-[1.5rem] card-shadow border border-slate-100">
+          <div class="flex flex-col gap-2 mb-5 items-start">
+            <span class="bg-slate-800 text-white font-extrabold px-3 py-1 rounded-lg text-[14px]">Q${idx+1}</span>
+            <span class="bg-blue-50 text-blue-700 font-black px-3.5 py-1.5 rounded-xl text-[17px] border border-blue-200 w-full shadow-sm">
+              ${q.periodLabel} <span class="text-blue-500 font-bold ml-1 text-[15px]">(${q.dateBadge})</span>
+            </span>
           </div>
-          <p class="font-bold text-slate-800 text-[17px] leading-[1.6] tracking-tight mb-5 px-1">${q.text}</p>
+          <p class="font-bold text-slate-800 text-[18px] leading-relaxed tracking-tight mb-8 px-1">${q.text}</p>
+          
           ${q.hasList ? `
-            <div class="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-200">
-              <p class="text-[12px] font-bold text-slate-400 mb-3 text-center">※ 11대 중대질환 해당 항목 확인</p>
-              <div class="space-y-4">
-                ${criticalIllnessesGroups.map(group => `
-                  <div class="space-y-2">
-                    <span class="text-[11px] font-black text-slate-400 bg-slate-200 px-1.5 rounded-md leading-tight py-0.5">${group.category}</span>
-                    <div class="grid grid-cols-2 gap-2">
-                      ${group.items.map(ill => `<span class="bg-white text-slate-700 px-2 py-1.5 rounded-lg border border-slate-200 text-[13px] font-bold shadow-sm text-center">${ill}</span>`).join('')}
-                    </div>
-                  </div>
-                `).join('')}
+            <div class="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-200">
+              <p class="text-[12.5px] font-bold text-slate-500 mb-3 text-center">※ 11대 질환 해당 항목</p>
+              <div class="flex flex-wrap gap-2 justify-center">
+                ${criticalIllnessesList.map(ill => `<span class="bg-white text-slate-700 px-2 py-1 rounded-lg border border-slate-200 text-[13px] font-bold shadow-sm">${ill}</span>`).join('')}
               </div>
             </div>
           ` : ''}
-          <div class="flex gap-2.5">
-            <button onclick="setAnswer(${index}, 'yes')" id="btn-yes-${index}" class="flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected">예</button>
-            <button onclick="setAnswer(${index}, 'no')" id="btn-no-${index}" class="flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected">아니오</button>
+
+          <div class="flex flex-col gap-3">
+            <button onclick="handleAnswer('yes')" class="w-full h-[60px] rounded-2xl font-bold text-[18px] transition-all hover:bg-red-50 ${yClass}">
+              네, 있습니다 (상세입력)
+            </button>
+            <button onclick="handleAnswer('no')" class="w-full h-[60px] rounded-2xl font-bold text-[18px] transition-all hover:bg-slate-100 ${nClass}">
+              아니오, 없습니다
+            </button>
           </div>
         </div>
-      `).join('');
+      `;
     }
 
-    function setAnswer(idx, val) {
-      answers[idx] = val; const y = document.getElementById(`btn-yes-${idx}`), n = document.getElementById(`btn-no-${idx}`), qBox = document.getElementById(`q-box-${idx}`); qBox.classList.remove('box-error');
-      if (val === 'yes') { y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-yes"; n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
-      else { n.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-select-no"; y.className = "flex-1 h-[56px] rounded-2xl text-[16px] transition-all btn-unselected"; }
-      document.getElementById('details-section').classList.toggle('hidden', !Object.values(answers).includes('yes'));
-      renderTabs(); if (idx === 4) renderTabContent(); triggerAutoSave();
+    function handleAnswer(val) {
+      answers[step] = val;
+      render(false); 
+      
+      setTimeout(() => {
+        if(val === 'yes') {
+          view = 'd';
+          render(true); 
+        } else {
+          diseases = diseases.filter(d => d.qIndex !== step); 
+          goNext();
+        }
+      }, 250); 
     }
 
-    function renderTabs() {
-      const container = document.getElementById('tabs-container');
-      container.innerHTML = diseases.map((d, i) => `
-        <button onclick="switchTab(${d.id})" class="relative snap-start shrink-0 px-6 py-3.5 rounded-full text-[16px] transition-all ${d.id === currentTabId ? 'tab-active shadow-md' : 'tab-inactive'}">
-          건수 ${i + 1} ${Object.values(d.errors).includes(true) ? '<span class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-2 right-2 border-2 border-white animate-pulse"></span>' : ''}
-        </button>`).join('');
-    }
-
-    function switchTab(id) { currentTabId = id; renderTabs(); renderTabContent(); triggerAutoSave(); }
-    function addDisease() { diseases.push({ id: nextDiseaseId++, type: 'disease', injuryCategory: 'general', name: '', bodyPart: '', startDate: '', endDate: '', outPatientDays: '', medicineDays: '', surgery: null, hospitalized: null, hospitalDays: '', treatment: '', remarks: '', errors: { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false } }); currentTabId = diseases[diseases.length - 1].id; renderTabs(); renderTabContent(); triggerAutoSave(); setTimeout(() => { document.getElementById('details-section').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }
-    function removeCurrentDisease() { if (diseases.length <= 1) return showToast("최소 1개 정보는 필요합니다.", true); diseases = diseases.filter(d => d.id !== currentTabId); currentTabId = diseases[0].id; renderTabs(); renderTabContent(); triggerAutoSave(); }
-    function setType(type) { const d = diseases.find(d => d.id === currentTabId); if (d) { d.type = type; d.name = ''; d.bodyPart = ''; d.errors.type = false; d.errors.name = false; d.errors.bodyPart = false; renderTabContent(); triggerAutoSave(); } }
-    function setInjuryCategory(cat) { const d = diseases.find(d => d.id === currentTabId); if (d && d.type === 'injury') { d.injuryCategory = cat; renderTabContent(); triggerAutoSave(); } }
-    function handleInput(val) { updateField('name', val); const d = diseases.find(d => d.id === currentTabId); if (d.type === 'injury') return; const s = document.getElementById('suggest-box'); if (!val) { s.innerHTML = ''; return; } let matched = []; for (let k in diseaseLibrary) if (val.includes(k) || k.includes(val)) matched = [...matched, ...diseaseLibrary[k]]; matched = [...new Set(matched)].slice(0, 5); s.innerHTML = matched.length ? `<div class="flex flex-wrap gap-2 mt-3 p-3 bg-blue-50 rounded-xl border border-blue-100"><span class="w-full text-xs font-bold text-blue-500 mb-1">혹시 이 질병인가요?</span>${matched.map(m => `<div onclick="selectD('${m}')" class="suggest-chip">${m}</div>`).join('')}</div>` : ''; }
-    function selectD(n) { updateField('name', n); renderTabContent(); triggerAutoSave(); }
-    function updateField(f, v) { const d = diseases.find(d => d.id === currentTabId); if (d) { d[f] = v; if (f === 'name') d.errors.name = false; if (f === 'bodyPart') d.errors.bodyPart = false; if (f === 'startDate' || f === 'endDate') { d.errors.date = false; d.errors.sequence = false; renderTabs(); } if (f === 'outPatientDays' || f === 'medicineDays' || f === 'hospitalDays') { d.errors.days = false; renderTabs(); } triggerAutoSave(); } }
-    function setAction(type, val) { const d = diseases.find(d => d.id === currentTabId); if (d) { d[type] = val; d.errors.action = false; if (type === 'hospitalized' && val === 'no') d.hospitalDays = ''; renderTabContent(); triggerAutoSave(); } }
-
-    function renderTabContent() {
-      const container = document.getElementById('tab-content'); const d = diseases.find(d => d.id === currentTabId); if (!d) return;
-      container.innerHTML = `
-        <div class="flex justify-between items-center mb-7"><h3 class="font-extrabold text-slate-800 text-[20px]">건수 ${diseases.findIndex(x => x.id === d.id) + 1} 상세 작성</h3>${diseases.length > 1 ? `<button onclick="removeCurrentDisease()" class="text-[13px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}</div>
-        <div class="space-y-10">
-          <div class="${d.errors.type ? 'box-error p-4 -mx-4' : ''}"><label class="block text-[17px] font-extrabold text-slate-800 mb-3">1. 어떻게 다치시거나 아프셨나요?</label><div class="grid grid-cols-2 gap-3"><button onclick="setType('disease')" class="flex flex-col items-center justify-center gap-1.5 h-[80px] rounded-2xl transition-all ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}"><span class="text-2xl leading-none">🦠</span><span class="text-[14px] font-bold">질병 (아픔)</span></button><button onclick="setType('injury')" class="flex flex-col items-center justify-center gap-1.5 h-[80px] rounded-2xl transition-all ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}"><span class="text-2xl leading-none">🩸</span><span class="text-[14px] font-bold">상해 (다침)</span></button></div></div>
-          <div class="animate-slide-down">${d.type === 'disease' ? `<label class="block text-[17px] font-extrabold text-slate-800 mb-3">2. 어떤 질병인가요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label><input type="text" placeholder="예: 위염, 장염, 디스크 등" value="${d.name}" oninput="handleInput(this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.name ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none font-bold shadow-sm focus:bg-white transition-all"><div id="suggest-box"></div>` : `<div class="space-y-6"><div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner"><label class="block text-[14px] font-bold text-slate-600 mb-2">교통사고 인가요?</label><div class="flex gap-2"><button onclick="setInjuryCategory('general')" class="flex-1 py-2 rounded-xl text-[14px] transition-all border ${d.injuryCategory === 'general' ? 'chip-active shadow-sm' : 'chip-inactive bg-white'}">일반 다침</button><button onclick="setInjuryCategory('traffic')" class="flex-1 py-2 rounded-xl text-[14px] transition-all border ${d.injuryCategory === 'traffic' ? 'chip-active shadow-sm' : 'chip-inactive bg-white'}">🚗 교통사고</button></div></div><div><label class="block text-[17px] font-extrabold text-slate-800 mb-3">2-1. 어떻게 다치셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label><input type="text" placeholder="${d.injuryCategory === 'traffic' ? '예: 후방추돌, 보행중 사고 등' : '예: 칼에 베임, 계단에서 넘어짐 등'}" value="${d.name}" oninput="updateField('name', this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.name ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none font-bold shadow-sm focus:bg-white transition-all"></div><div><label class="block text-[17px] font-extrabold text-slate-800 mb-3">2-2. 어느 부위를 다치셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label><input type="text" placeholder="예: 오른쪽 검지 손가락, 뒷목 등" value="${d.bodyPart}" oninput="updateField('bodyPart', this.value)" class="w-full h-[60px] px-4 bg-slate-50 border ${d.errors.bodyPart ? 'input-error' : 'border-slate-200'} rounded-2xl text-[17px] outline-none font-bold shadow-sm focus:bg-white transition-all"></div></div>`}</div>
-          <div><label class="block text-[17px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">3. 언제 병원에 가셨나요? <span class="text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded">필수</span></label><div class="flex items-center gap-2"><input type="month" value="${d.startDate}" onchange="updateField('startDate', this.value)" class="flex-1 h-[60px] bg-slate-50 border ${d.errors.date || d.errors.sequence ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[16px] outline-none font-bold shadow-sm focus:bg-white"><span class="text-slate-400 font-bold">~</span><input type="month" value="${d.endDate}" onchange="updateField('endDate', this.value)" class="flex-1 h-[60px] bg-slate-50 border ${d.errors.date || d.errors.sequence ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[16px] outline-none font-bold shadow-sm focus:bg-white"></div></div>
-          <div class="${d.errors.action && d.surgery === null ? 'box-error p-4 -mx-4' : ''}"><label class="block text-[17px] font-extrabold text-slate-800 mb-3">4. 수술 하셨나요?</label><div class="flex gap-3"><button onclick="setAction('surgery', 'yes')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.surgery === 'yes' ? 'btn-select-yes shadow-md' : 'btn-unselected'}">🔪 했어요</button><button onclick="setAction('surgery', 'no')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.surgery === 'no' ? 'btn-select-no shadow-md' : 'btn-unselected'}">안 했어요</button></div></div>
-          <div class="${d.errors.action && d.hospitalized === null ? 'box-error p-4 -mx-4' : ''}"><label class="block text-[17px] font-extrabold text-slate-800 mb-3">5. 입원 하셨나요?</label><div class="flex gap-3"><button onclick="setAction('hospitalized', 'yes')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.hospitalized === 'yes' ? 'btn-select-yes shadow-md' : 'btn-unselected'}">🏥 했어요</button><button onclick="setAction('hospitalized', 'no')" class="flex-1 h-[60px] rounded-2xl text-[17px] transition-all ${d.hospitalized === 'no' ? 'btn-select-no shadow-md' : 'btn-unselected'}">안 했어요</button></div>${d.hospitalized === 'yes' ? `<div class="mt-4 bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center justify-between animate-slide-down shadow-sm"><span class="text-[15px] font-bold text-red-700">며칠 입원하셨나요?</span><div class="flex items-center gap-2"><input type="tel" placeholder="0" value="${d.hospitalDays}" oninput="updateField('hospitalDays', this.value)" class="w-16 h-12 bg-white border border-red-200 rounded-xl text-center font-extrabold text-red-600 outline-none text-[18px] shadow-sm"><span class="font-bold text-red-700">일</span></div></div>` : ''}</div>
-          <div class="${d.errors.days ? 'box-error p-4 -mx-4' : ''}"><label class="block text-[17px] font-extrabold text-slate-800 mb-3">6. 통원 및 약 처방 일수 <span class="text-[13px] font-medium text-slate-400 ml-1">(숫자만)</span></label><div class="grid grid-cols-2 gap-4"><div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-sm"><span class="font-bold text-slate-600">통원</span><div class="flex items-center gap-1"><input type="tel" placeholder="0" value="${d.outPatientDays}" oninput="updateField('outPatientDays', this.value)" class="w-14 h-10 bg-white border rounded-lg text-center font-bold text-[16px] shadow-sm"><span class="font-bold text-slate-500">일</span></div></div><div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-sm"><span class="font-bold text-slate-600">약처방</span><div class="flex items-center gap-1"><input type="tel" placeholder="0" value="${d.medicineDays}" oninput="updateField('medicineDays', this.value)" class="w-14 h-10 bg-white border rounded-lg text-center font-bold text-[16px] shadow-sm"><span class="font-bold text-slate-500">일</span></div></div></div></div>
-          <div><label class="block text-[17px] font-extrabold text-slate-800 mb-3">7. 구체적인 치료 내용이나 특이사항</label><textarea rows="2" placeholder="자유롭게 적어주세요." oninput="updateField('treatment', this.value)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[16px] outline-none resize-none font-medium shadow-sm focus:bg-white transition-all"></textarea></div>
-          <div class="pt-10 border-t border-slate-200 mt-8"><p class="text-[14px] text-red-600 font-bold text-center mb-3">🚨 고지할 병력이 더 남아있나요?</p><button onclick="addDisease()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-white border-2 border-slate-800 text-slate-800 shadow-sm animate-gentle-pulse flex items-center justify-center gap-2 active:scale-95 transition-all">➕ 새로운 병력 추가하기</button></div>
-        </div>`;
-    }
-
-    async function validateAndShare() {
-      let missingQ = null;
-      for (let i = 0; i < 6; i++) { if (!answers[i]) { missingQ = i; break; } }
-      if (missingQ !== null) {
-        showToast(`🚨 ${missingQ + 1}번 질문에 답해주세요!`, true);
-        const qBox = document.getElementById(`q-box-${missingQ}`);
-        qBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        qBox.classList.add('box-error');
-        setTimeout(() => qBox.classList.remove('box-error'), 1500);
-        return;
+    function ensureDiseaseExistsForStep(qIdx) {
+      const stepDiseases = diseases.filter(d => d.qIndex === qIdx);
+      if (stepDiseases.length === 0) {
+        addDiseaseToStep(qIdx);
+      } else if (!currentTabId || !diseases.find(d => d.id === currentTabId && d.qIndex === qIdx)) {
+        currentTabId = stepDiseases[0].id;
       }
-      if (!Object.values(answers).includes('yes')) { clearLocalData(); return executeShare(); }
-      let ok = true, msg = "";
-      diseases.forEach(d => {
-        d.errors = { type: false, name: false, bodyPart: false, date: false, sequence: false, days: false, action: false };
-        if (d.name || d.bodyPart || d.startDate || d.outPatientDays || d.medicineDays || d.hospitalDays || d.surgery || d.hospitalized) {
-          if (!d.type) { d.errors.type = true; ok = false; msg = "질병인지 상해인지 선택해주세요."; }
-          if (d.type === 'disease' && !d.name.trim()) { d.errors.name = true; ok = false; msg = "어떤 질병인지 입력해주세요."; }
-          if (d.type === 'injury' && (!d.name.trim() || !d.bodyPart.trim())) { d.errors.name = true; d.errors.bodyPart = true; ok = false; msg = "상해 내용과 부위를 입력해주세요."; }
-          if (!d.startDate || !d.endDate) { d.errors.date = true; ok = false; msg = "내원 기간을 선택해주세요."; }
-          else if (new Date(d.startDate) > new Date(d.endDate)) { d.errors.sequence = true; ok = false; msg = "시작일이 종료일보다 늦습니다."; }
-          if (d.surgery === null || d.hospitalized === null) { d.errors.action = true; ok = false; msg = "수술 및 입원 여부를 체크해주세요."; }
-        } else { d.errors.name = true; ok = false; msg = "상세 병력을 입력해주세요."; }
+    }
+
+    function addDiseaseToStep(qIdx) {
+      const newId = nextDiseaseId++;
+      diseases.push({ 
+        id: newId, qIndex: qIdx, type: 'disease', name: '', bodyPart: '', 
+        startDate: '', endDate: '', outPatientDays: '', medicineDays: '', hospitalDays: '', 
+        isHospitalized: false, isSurgery: false, treatment: '', remarks: '', criticalIllnesses: [], 
+        dateError: false, sequenceError: false, daysError: false, typeError: false, nameError: false, actionError: false 
       });
-      if (ok) {
-        for (let d of diseases) {
-          if (!d.startDate) continue;
-          if ((d.endDate >= limit3m || d.startDate >= limit3m) && (answers[0] !== 'yes' && answers[1] !== 'yes')) { d.errors.date = true; ok = false; msg = "3개월 내 내역입니다. 1·2번 질문을 확인하세요!"; break; }
-          if (d.startDate < limit5y && answers[5] !== 'yes' && answers[4] !== 'yes' && answers[3] !== 'yes') { d.errors.date = true; ok = false; msg = "5년이 지난 내역입니다. 질문 답변을 확인하세요!"; break; }
+      currentTabId = newId;
+      if(view === 'd') render(false);
+    }
+
+    function switchTab(id) { currentTabId = id; render(false); }
+    
+    function removeDisease(id) {
+      const stepDiseases = diseases.filter(d => d.qIndex === step);
+      if(stepDiseases.length <= 1) return showToast("최소 1개의 병력은 입력해야 합니다.", true);
+      diseases = diseases.filter(d => d.id !== id);
+      currentTabId = diseases.filter(d => d.qIndex === step)[0].id;
+      render(false);
+    }
+
+    function renderDetailView(qIdx) {
+      const stepDiseases = diseases.filter(d => d.qIndex === qIdx);
+      const d = diseases.find(d => d.id === currentTabId);
+      if(!d) return '';
+
+      const isQ5 = qIdx === 4;
+
+      let tabsHtml = `<div class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 snap-x hide-scrollbar">`;
+      tabsHtml += stepDiseases.map((sd, i) => {
+        const hasErr = sd.dateError || sd.daysError || sd.typeError || sd.nameError || sd.actionError || sd.sequenceError;
+        return `<button onclick="switchTab(${sd.id})" class="relative snap-start shrink-0 px-5 py-3 rounded-full text-[15px] transition-all ${sd.id === currentTabId ? 'tab-active shadow-md' : 'tab-inactive'}">
+          건수 ${i+1} ${hasErr ? '<span class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-1 right-1 border-2 border-white"></span>' : ''}
+        </button>`;
+      }).join('');
+      tabsHtml += `</div>`;
+
+      let formHtml = `
+        <div class="bg-white p-6 rounded-3xl card-shadow border border-slate-100 pb-8">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="font-extrabold text-slate-800 text-[18px]">상세 정보 작성</h3>
+              <p class="text-[13px] text-blue-600 font-bold mt-1">※ 질문지에서 '예'라고 체크하신 항목만 적어주세요!</p>
+            </div>
+            ${stepDiseases.length > 1 ? `<button onclick="removeDisease(${d.id})" class="text-[12px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border">삭제</button>` : ''}
+          </div>
+          
+          <div class="space-y-8">
+            <div class="${d.typeError ? 'box-error p-3 -mx-3 rounded-2xl' : ''}">
+              <label class="block text-[15px] font-bold text-slate-700 mb-2">1. 분류</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="updateD('type', 'disease')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">🦠 질병(아픔)</button>
+                <button onclick="updateD('type', 'injury')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">🩸 상해(다침)</button>
+              </div>
+            </div>
+
+            ${isQ5 && d.type === 'disease' ? `
+              <div class="bg-red-50/50 p-4 rounded-2xl border border-red-100">
+                <label class="block text-[13px] font-bold text-red-600 mb-2">🚨 11대 질환 해당 여부 (다중선택)</label>
+                <div class="flex flex-wrap gap-2">${criticalIllnessesList.map(ill => `<button onclick="toggleCritical('${ill}')" class="px-3 py-2 rounded-xl text-[13px] font-bold border transition-all ${d.criticalIllnesses.includes(ill) ? 'chip-active' : 'chip-inactive bg-white'}">${ill}</button>`).join('')}</div>
+              </div>` : ''}
+
+            <div>
+              <label class="block text-[15px] font-bold text-slate-700 mb-2">2. ${d.type === 'disease' ? '어떤 질병인가요?' : '어떻게 다치셨나요?'} <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
+              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 고혈압 (약 이름 검색 가능)' : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+              <div id="suggest-box"></div>
+              
+              ${d.type === 'injury' ? `
+                <div class="mt-4">
+                  <label class="block text-[15px] font-bold text-slate-700 mb-2">2-1. 어느 부위를 다치셨나요? <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
+                  <input type="text" placeholder="예: 오른쪽 무릎, 허리" value="${d.bodyPart}" oninput="updateD('bodyPart', this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+                </div>
+              ` : ''}
+            </div>
+
+            <div>
+              <label class="block text-[15px] font-bold text-slate-700 mb-2">3. 언제 병원에 가셨나요? <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
+              <div class="flex items-center gap-2">
+                <input type="month" value="${d.startDate}" onchange="updateD('startDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+                <span class="text-slate-400 font-bold">~</span>
+                <input type="month" value="${d.endDate}" onchange="updateD('endDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+              </div>
+              ${d.sequenceError ? `<p class="text-red-600 text-[13px] font-bold mt-2">🚨 시작일이 종료일보다 나중입니다!</p>` : ''}
+            </div>
+
+            <div class="${d.daysError ? 'box-error p-3 -mx-3 rounded-2xl' : ''}">
+              <label class="block text-[15px] font-bold text-slate-700 mb-3">4. 진료 상세 <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">숫자만 입력</span></label>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="flex flex-col gap-1"><span class="text-[13px] font-bold text-slate-500 text-center">통원 일수</span><div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2 h-12"><input type="tel" value="${d.outPatientDays}" oninput="updateD('outPatientDays', this.value)" class="w-full text-center font-bold text-[16px] bg-transparent outline-none"><span class="text-slate-400 text-[13px] font-bold">일</span></div></div>
+                <div class="flex flex-col gap-1"><span class="text-[13px] font-bold text-slate-500 text-center">약처방 일수</span><div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2 h-12"><input type="tel" value="${d.medicineDays}" oninput="updateD('medicineDays', this.value)" class="w-full text-center font-bold text-[16px] bg-transparent outline-none"><span class="text-slate-400 text-[13px] font-bold">일</span></div></div>
+              </div>
+              
+              <div class="flex flex-col gap-3">
+                <button onclick="toggleD('isHospitalized')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isHospitalized ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                  <span class="flex items-center gap-2">🏥 입원하셨나요?</span>
+                  <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isHospitalized ? '네 (O)' : '아니오 (X)'}</span>
+                </button>
+                
+                ${d.isHospitalized ? `
+                  <div class="bg-red-50/70 p-3.5 rounded-xl border border-red-200 flex items-center justify-between animate-slide-down">
+                    <span class="text-[14px] font-bold text-red-700 pl-1">며칠 입원하셨나요?</span>
+                    <div class="flex items-center gap-1.5">
+                      <input type="tel" placeholder="0" value="${d.hospitalDays}" oninput="updateD('hospitalDays', this.value)" class="w-16 h-10 bg-white border border-red-300 rounded-lg text-center font-extrabold text-red-600 outline-none focus:ring-2 focus:ring-red-500 text-[16px]">
+                      <span class="font-bold text-red-700">일</span>
+                    </div>
+                  </div>
+                ` : ''}
+
+                <button onclick="toggleD('isSurgery')" class="w-full h-14 rounded-xl font-bold text-[15px] transition-all border-2 ${d.isSurgery ? 'action-btn-on' : 'action-btn-off'} flex justify-between items-center px-5">
+                  <span class="flex items-center gap-2">🔪 수술하셨나요?</span>
+                  <span class="text-[14px] bg-white/20 px-2 py-0.5 rounded-md">${d.isSurgery ? '네 (O)' : '아니오 (X)'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[15px] font-bold text-slate-700 mb-2">5. 치료 방법 및 기타 전달사항</label>
+              <textarea rows="3" placeholder="${d.type==='injury'?'물리치료, 핀제거술 등 자유롭게 적어주세요.':'용종제거, 추적관찰 중 등 구체적으로 적어주세요.'}" oninput="updateD('treatment', this.value)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[15px] outline-none resize-none leading-relaxed focus:bg-white transition-all">${d.treatment}</textarea>
+            </div>
+            
+            <!-- 🌟 새롭게 추가된 병력 추가 버튼 영역 -->
+            <div class="pt-8 border-t border-slate-200 mt-8">
+              <p class="text-[14px] text-red-600 font-bold text-center mb-3">🚨 질문에 해당하는 병력이 더 있나요?</p>
+              <button onclick="addDiseaseToStep(${qIdx})" class="w-full h-[64px] rounded-2xl font-extrabold text-[17px] bg-white border-2 border-slate-800 text-slate-800 shadow-sm animate-gentle-pulse flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95">
+                ➕ 병력 하나 더 추가하기
+              </button>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      return tabsHtml + formHtml;
+    }
+
+    function updateD(f, v) { 
+      const d = diseases.find(d => d.id === currentTabId); 
+      if(d) { 
+        d[f] = v; 
+        if(f==='name') d.nameError=false; 
+        if(f==='startDate'||f==='endDate') { d.dateError=false; d.sequenceError=false; }
+        if(f==='outPatientDays'||f==='medicineDays'||f==='hospitalDays') d.daysError=false;
+        render(false); 
+      } 
+    }
+    
+    function toggleD(f) { 
+      const d = diseases.find(d => d.id === currentTabId); 
+      if(d) { 
+        d[f] = !d[f]; 
+        if(f==='isHospitalized'&&!d[f]) d.hospitalDays=''; 
+        d.daysError=false; 
+        render(false); 
+      } 
+    }
+    
+    function toggleCritical(i) { 
+      const d = diseases.find(d => d.id === currentTabId); 
+      if(d) { 
+        if(d.criticalIllnesses.includes(i)) d.criticalIllnesses = d.criticalIllnesses.filter(x=>x!==i); 
+        else d.criticalIllnesses.push(i); 
+        render(false); 
+      } 
+    }
+
+    function handleNameInput(val) {
+      updateD('name', val);
+      const d = diseases.find(d => d.id === currentTabId);
+      if(d && d.type === 'injury') return;
+      const box = document.getElementById('suggest-box');
+      if(!val) { box.innerHTML = ''; return; }
+      
+      let matched = [];
+      const kw = val.toLowerCase().replace(/\s/g, "");
+      for(let k in diseaseLibrary) {
+        if(k.includes(kw) || kw.includes(k)) matched = [...matched, ...diseaseLibrary[k]];
+        diseaseLibrary[k].forEach(dn => { if(dn.replace(/\s/g, "").includes(kw)) matched.push(dn); });
+      }
+      matched = [...new Set(matched)].slice(0, 6);
+      
+      if(matched.length) {
+        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`;
+      } else box.innerHTML = '';
+    }
+
+    function renderSummaryView() {
+      let html = `<div class="bg-white p-7 rounded-[1.5rem] card-shadow border border-slate-100 text-center">
+        <h2 class="text-[22px] font-extrabold text-slate-800 mb-2 mt-4">작성이 완료되었습니다!</h2>
+        <p class="text-[15px] text-slate-500 mb-6">아래 버튼을 눌러 내용을 담당자에게 공유해주세요.</p>
+        
+        <div class="bg-slate-50 rounded-2xl p-5 text-left border border-slate-200">
+          <h3 class="font-bold text-slate-700 mb-3 border-b pb-2 text-[14px]">체크 결과 요약</h3>
+          <ul class="space-y-2 text-[14px]">`;
+      
+      for(let i=0; i<6; i++) {
+        const isYes = answers[i] === 'yes';
+        html += `<li class="flex items-center justify-between"><span class="text-slate-600">질문 ${i+1}</span> <span class="font-bold ${isYes?'text-red-600':'text-blue-600'}">${isYes?'예 (있음)':'아니오'}</span></li>`;
+      }
+      
+      const totalDiseases = diseases.filter(d => d.name || d.startDate).length;
+      html += `</ul>
+          <div class="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center font-bold">
+            <span class="text-slate-800">작성한 상세 병력</span>
+            <span class="text-red-600 bg-red-50 px-2 py-1 rounded-lg">${totalDiseases}건</span>
+          </div>
+        </div>
+      </div>`;
+      return html;
+    }
+
+
+    function goBack() {
+      if(view === 'd') { view = 'q'; render(true); }
+      else if(step > 0) {
+        step--;
+        if(answers[step] === 'yes') view = 'd';
+        else view = 'q';
+        render(true);
+      }
+    }
+
+    function goNext() {
+      step++;
+      view = 'q';
+      if(step > 5) view = 'summary';
+      render(true);
+    }
+
+    function validateAndNext() {
+      const stepDiseases = diseases.filter(d => d.qIndex === step);
+      let isValid = true, firstErr = null, msg = "";
+
+      stepDiseases.forEach(d => {
+        d.dateError = false; d.sequenceError = false; d.daysError = false; d.nameError = false; d.typeError = false;
+        
+        if(!d.type) { d.typeError = true; isValid = false; if(!msg) msg = "질병/상해 구분을 선택해주세요."; }
+        if(!d.name.trim()) { d.nameError = true; isValid = false; if(!msg) msg = d.type === 'disease' ? "어떤 질병인지 입력해주세요." : "사고 내용을 입력해주세요."; }
+        if(d.type === 'injury' && !d.bodyPart.trim()) { d.nameError = true; isValid = false; if(!msg) msg = "다친 부위를 입력해주세요."; }
+        
+        if(!d.startDate || !d.endDate) { d.dateError = true; isValid = false; if(!msg) msg = "내원 기간을 입력해주세요."; }
+        else if(new Date(d.startDate) > new Date(d.endDate)) { d.sequenceError = true; isValid = false; if(!msg) msg = "시작일이 종료일보다 늦습니다."; }
+        else {
+          const limit = questions[step].limit;
+          if (d.startDate < limit && step !== 5) { 
+            d.dateError = true; isValid = false; if(!msg) msg = questions[step].limitMsg;
+          }
+        }
+
+        const outD = parseInt(d.outPatientDays)||0, medD = parseInt(d.medicineDays)||0, hosD = parseInt(d.hospitalDays)||0;
+        if(outD === 0 && medD === 0 && hosD === 0 && !d.isSurgery && !d.isHospitalized) { 
+          d.daysError = true; isValid = false; if(!msg) msg = "진료 일수(또는 수술/입원 여부)를 입력해주세요."; 
+        }
+        if(d.isHospitalized && hosD === 0) { d.daysError = true; isValid = false; if(!msg) msg = "입원 일수를 정확히 입력해주세요."; }
+        
+        if(!isValid && !firstErr) firstErr = d.id;
+      });
+
+      if(!isValid) { 
+        showToast(msg, true); 
+        if(firstErr) switchTab(firstErr);
+        return; 
+      }
+      goNext();
+    }
+
+    function updateActionBtn(text, disabled, isShare = false) {
+      const b = document.getElementById('action-btn');
+      const t = document.getElementById('action-text');
+      t.innerText = text;
+      b.disabled = disabled;
+      
+      if(disabled) {
+        b.className = "w-full h-[60px] rounded-2xl font-bold text-[18px] bg-slate-200 text-slate-400 cursor-not-allowed transition-all";
+      } else {
+        b.className = "w-full h-[60px] rounded-2xl font-extrabold text-[18px] bg-slate-800 text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2";
+        if(isShare) {
+          b.className = b.className.replace('bg-slate-800', 'bg-blue-600');
+          b.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> <span id="action-text">${text}</span>`;
         }
       }
-      if (!ok) { showToast(msg, true); renderTabs(); renderTabContent(); return; }
-      clearLocalData(); executeShare();
+    }
+
+    function handleActionClick() {
+      if(view === 'q') return; 
+      if(view === 'd') validateAndNext();
+      if(step === 6) executeShare();
     }
 
     async function executeShare() {
-      const text = generate();
+      const text = generateReportText();
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
       if (navigator.share && isMobile) {
-        try {
-          await navigator.share({ title: '고지의무 작성 완료', text: text });
-        } catch (err) {
-          if (err.name !== 'AbortError') copyFallback(text);
-        }
-      } else {
-        copyFallback(text);
-      }
+        try { await navigator.share({ title: '고지의무 작성 완료', text: text }); } 
+        catch (err) { if (err.name !== 'AbortError') copyFallback(text); }
+      } else { copyFallback(text); }
     }
 
     function copyFallback(text) {
       const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
-      if (document.execCommand('copy')) {
-        showToast("작성 내용이 복사되었습니다!<br>카톡 창에 마우스 우클릭 -> 붙여넣기 해주세요.");
-      }
+      if(document.execCommand('copy')) showToast("내용이 복사되었습니다! 카톡에 붙여넣기 해주세요.");
+      else showToast("복사 실패", true);
       document.body.removeChild(ta);
     }
 
-    function generate() {
+    function generateReportText() {
       let r = `📋 [계약 전 알릴 의무 리포트]\n작성일시: ${new Date().toLocaleString()}\n\n■ 기본 응답\n`;
-      for (let i = 0; i < 6; i++) r += `[Q${i + 1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
-      if (!Object.values(answers).includes('yes')) return r + "\n✨ 이상 없음!";
-      r += "\n■ 상세 내용\n";
-      diseases.forEach((d, i) => {
-        const typeEmoji = d.type === 'disease' ? '🦠 질병' : d.injuryCategory === 'traffic' ? '🚗 상해(교통사고)' : '🩸 상해(일반)';
-        r += `\n< 건수 ${i + 1} (${typeEmoji}) >\n`;
-        r += d.type === 'disease' ? `1. 질병명: ${d.name}\n` : `1. 사고내용: ${d.name}\n2. 다친부위: ${d.bodyPart}\n`;
-        r += `기간: ${d.startDate}~${d.endDate}\n수술: ${d.surgery === 'yes' ? 'O' : 'X'} / 입원: ${d.hospitalized === 'yes' ? `O (${d.hospitalDays}일)` : 'X'}\n진료: 통원 ${d.outPatientDays || 0}일 / 약처방 ${d.medicineDays || 0}일\n기타: ${d.treatment || '없음'}\n`;
-      });
-      r += "\n===================\n위와 같이 고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
+      for(let i=0; i<6; i++) r += `[Q${i+1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
+      
+      const filledDiseases = diseases.filter(d => d.name || d.startDate);
+      if(filledDiseases.length === 0) {
+        r += "\n✨ 이상 없음!\n";
+      } else {
+        r += "\n■ 상세 내용\n";
+        filledDiseases.forEach((d, i) => {
+          const typeEmoji = d.type === 'disease' ? '🦠 질병' : '🩸 상해';
+          r += `\n< 건수 ${i+1} (${typeEmoji}) >\n`;
+          if(d.type === 'disease') {
+            r += `1. 질병명: ${d.name}${d.criticalIllnesses.length?` (11대: ${d.criticalIllnesses.join(',')})`:''}\n`;
+          } else {
+            r += `1. 사고내용: ${d.name}\n2. 다친부위: ${d.bodyPart}\n`;
+          }
+          r += `${d.type === 'disease' ? '2' : '3'}. 내원기간: ${d.startDate}~${d.endDate}\n`;
+          r += `${d.type === 'disease' ? '3' : '4'}. 진료: 통원 ${d.outPatientDays||0}일/약 ${d.medicineDays||0}일/입원 ${d.hospitalDays||0}일\n`;
+          r += `${d.type === 'disease' ? '4' : '5'}. 여부: 입원(${d.isHospitalized?'O':'X'})/수술(${d.isSurgery?'O':'X'})\n`;
+          const tIdx = d.type === 'disease' ? '5' : '6';
+          r += `${tIdx}. 치료: ${d.treatment || '없음'}\n`;
+        });
+      }
+
+      r += "\n========================\n위와 같이 고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
       return r;
     }
 
-    function showToast(m, isE) { const t = document.getElementById('toast'), c = document.getElementById('toast-content'); t.classList.remove('hidden'); t.classList.add('toast-enter'); c.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white bg-slate-800 border-l-4 ${isE ? 'border-red-500' : 'border-green-400'}`; c.innerHTML = `<span>${m}</span>`; setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3500); }
-    function clearLocalData() { localStorage.removeItem(STORAGE_KEY); }
+    function showToast(m, isE) {
+      const t = document.getElementById('toast'), c = document.getElementById('toast-content');
+      t.classList.remove('hidden'); t.classList.add('toast-enter');
+      c.className = `flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl text-[15px] font-bold text-white bg-slate-800 border-l-4 ${isE?'border-red-500':'border-green-400'}`;
+      c.innerHTML = `${isE?'❌':'✅'} <span>${m}</span>`;
+      setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3000);
+    }
+
+    function init() { loadData(); }
     init();
+
   </script>
 </body>
-
 </html>
