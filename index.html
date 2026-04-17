@@ -134,7 +134,7 @@
       },
       { 
         periodLabel: "최근 5년 이내", dateBadge: date5y + " 이후", 
-        text: "입원, 수술, 계속하여 7일 이상 치료, 계속하여 30일 이상 투약 사실이 있습니까?", 
+        text: "입원, 수술, 계속하여 7일 이상 치료, 30일 이상 투약 사실이 있습니까?", 
         limit: limit5y, limitMsg: "5년 이내 내역을 적어주세요.",
         desc: [
           "<strong class='text-blue-600'>'계속하여'란?</strong> 같은 원인으로 치료를 시작한 후 완료일까지 실제 치료/투약받은 일수를 의미함!"
@@ -360,7 +360,7 @@
 
             <div>
               <label class="block text-[15px] font-bold text-slate-700 mb-2">2. ${d.type === 'disease' ? '어떤 질병인가요?' : '어떻게 다치셨나요?'} <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
-              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 대장용종 제거 : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="this.classList.remove('input-error'); handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 고혈압 (약 이름 검색 가능)' : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="this.classList.remove('input-error'); handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
               <div id="suggest-box"></div>
               
               ${d.type === 'injury' ? `
