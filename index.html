@@ -49,21 +49,26 @@
 
   <div class="max-w-md mx-auto bg-[#f3f4f6] min-h-screen flex flex-col relative pb-32 overflow-hidden">
     
+    <!-- 상단 진행바 및 뒤로가기 헤더 -->
     <div class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div class="flex items-center justify-between px-5 h-14">
-        <button id="back-btn" onclick="goBack()" class="text-slate-500 font-bold p-2 -ml-2 flex items-center gap-1 active:scale-90 transition-transform">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+        <!-- 🌟 버튼처럼 확 눈에 띄게 강화된 뒤로가기 버튼 -->
+        <button id="back-btn" onclick="goBack()" class="text-slate-700 bg-slate-200/70 font-extrabold px-3 py-1.5 -ml-2 flex items-center gap-1 rounded-xl active:scale-90 transition-all shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+          <span class="text-[13px]">이전</span>
         </button>
         <span id="header-title" class="font-extrabold text-[16px]">계약 전 알릴 의무</span>
-        <div class="w-9"></div>
+        <div class="w-14"></div> <!-- 중앙 정렬 맞춤용 여백 -->
       </div>
       <div class="w-full bg-slate-100 h-1.5">
         <div id="progress-bar" class="bg-blue-600 h-full transition-all duration-500 ease-out w-[0%] rounded-r-full"></div>
       </div>
     </div>
 
+    <!-- 메인 컨텐츠 렌더링 영역 -->
     <div id="app-container" class="px-5 pt-6 pb-10 flex-1"></div>
 
+    <!-- 하단 고정 액션 버튼 -->
     <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md p-4 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-40 pb-safe">
       <button id="action-btn" onclick="handleActionClick()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
         <span id="action-text">다음 질문</span>
@@ -146,7 +151,7 @@
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v7';
+    const STORAGE_KEY = 'insurance_wizard_v8';
 
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
     
@@ -164,6 +169,15 @@
       }
       render(false); 
     }
+
+    // 🌟 핵심 방어 로직: 폰의 '뒤로가기' 하드웨어 버튼 후킹
+    window.addEventListener('popstate', function(event) {
+      // 폼 작성 중일 때 폰 뒤로가기 버튼을 누르면 브라우저 밖으로 튕기지 않고, 앱 내 이전 단계로 이동
+      if (step > 0 || view === 'd') {
+        history.pushState(null, null, location.href); // 상태를 다시 밀어넣어 다음 뒤로가기도 방어
+        goBack(); // 우리 앱의 커스텀 뒤로가기 로직 실행
+      }
+    });
 
     function render(animate = true) {
       saveData();
@@ -333,8 +347,8 @@
             <div class="${d.typeError ? 'box-error p-3 -mx-3 rounded-2xl' : ''}">
               <label class="block text-[15px] font-bold text-slate-700 mb-2">1. 분류</label>
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="updateD('type', 'disease'); render(false);" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">🦠 질병(아픔)</button>
-                <button onclick="updateD('type', 'injury'); render(false);" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">🩸 상해(다침)</button>
+                <button onclick="updateD('type', 'disease')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'disease' ? 'btn-type-selected' : 'btn-unselected'}">🦠 질병(아픔)</button>
+                <button onclick="updateD('type', 'injury')" class="h-12 rounded-xl transition-all font-bold text-[14px] ${d.type === 'injury' ? 'btn-type-selected' : 'btn-unselected'}">🩸 상해(다침)</button>
               </div>
             </div>
 
@@ -346,8 +360,7 @@
 
             <div>
               <label class="block text-[15px] font-bold text-slate-700 mb-2">2. ${d.type === 'disease' ? '어떤 질병인가요?' : '어떻게 다치셨나요?'} <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
-              <!-- 🌟 oninput에서 render(false)를 완전히 제거하고 DOM 조작만 하도록 수정 (키보드 이탈 방지) -->
-              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 대장용종 제거' : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="this.classList.remove('input-error'); handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
+              <input type="text" placeholder="${d.type === 'disease' ? '예: 위염, 대장용종 제거 : '예: 계단에서 넘어짐, 교통사고'}" value="${d.name}" oninput="this.classList.remove('input-error'); handleNameInput(this.value)" class="w-full h-14 px-4 bg-slate-50 border ${d.nameError ? 'input-error' : 'border-slate-200'} rounded-2xl text-[16px] outline-none focus:border-slate-800 transition-all font-bold">
               <div id="suggest-box"></div>
               
               ${d.type === 'injury' ? `
@@ -361,9 +374,9 @@
             <div>
               <label class="block text-[15px] font-bold text-slate-700 mb-2">3. 언제 병원에 가셨나요? <span class="text-[11px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1">필수</span></label>
               <div class="flex items-center gap-2">
-                <input type="month" value="${d.startDate}" oninput="this.classList.remove('input-error')" onchange="updateD('startDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+                <input type="month" value="${d.startDate}" onchange="updateD('startDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
                 <span class="text-slate-400 font-bold">~</span>
-                <input type="month" value="${d.endDate}" oninput="this.classList.remove('input-error')" onchange="updateD('endDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
+                <input type="month" value="${d.endDate}" onchange="updateD('endDate', this.value)" class="flex-1 h-14 bg-slate-50 border ${d.dateError||d.sequenceError ? 'input-error' : 'border-slate-200'} rounded-2xl text-center text-[15px] outline-none font-bold">
               </div>
               ${d.sequenceError ? `<p class="text-red-600 text-[13px] font-bold mt-2">🚨 시작일이 종료일보다 나중입니다!</p>` : ''}
             </div>
@@ -417,7 +430,6 @@
       return tabsHtml + formHtml;
     }
 
-    // 🌟 핵심: 텍스트 입력 시 절대 화면을 새로 그리지 않도록 로직 분리
     function updateD(f, v) { 
       const d = diseases.find(d => d.id === currentTabId); 
       if(d) { 
@@ -425,7 +437,7 @@
         if(f==='name') d.nameError=false; 
         if(f==='startDate'||f==='endDate') { d.dateError=false; d.sequenceError=false; }
         if(f==='outPatientDays'||f==='medicineDays'||f==='hospitalDays') d.daysError=false;
-        saveData(); // 화면은 그리지 않고 데이터만 저장
+        saveData(); 
       } 
     }
     
@@ -444,7 +456,7 @@
       if(d) { 
         if(d.criticalIllnesses.includes(i)) d.criticalIllnesses = d.criticalIllnesses.filter(x=>x!==i); 
         else d.criticalIllnesses.push(i); 
-        render(false); // 칩 색상 변경을 위해 랜더링
+        render(false); 
       } 
     }
 
@@ -452,7 +464,6 @@
       updateD('name', val);
       const d = diseases.find(d => d.id === currentTabId);
       if(d && d.type === 'injury') return;
-      
       const box = document.getElementById('suggest-box');
       if(!val) { box.innerHTML = ''; return; }
       
@@ -465,20 +476,8 @@
       matched = [...new Set(matched)].slice(0, 6);
       
       if(matched.length) {
-        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="selectDisease('${m}')" class="suggest-chip">${m}</div>`).join('')}</div>`;
+        box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`;
       } else box.innerHTML = '';
-    }
-
-    // 🌟 질병 칩 선택 시 화면에 반영되도록 별도 함수 생성
-    function selectDisease(name) {
-      const d = diseases.find(d => d.id === currentTabId);
-      if (d) {
-        d.name = name;
-        d.nameError = false;
-        saveData();
-        render(false); // 칩을 누르면 키보드가 내려가도 상관없으니 화면 갱신
-        showToast("질병명이 자동 입력되었습니다.");
-      }
     }
 
     function renderSummaryView() {
@@ -639,7 +638,11 @@
       setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3000);
     }
 
-    function init() { loadData(); }
+    function init() { 
+      // 🌟 앱 시작할 때 History 상태 하나 밀어넣어서 '뒤로가기' 튕김 1차 방어
+      history.pushState(null, null, location.href); 
+      loadData(); 
+    }
     init();
 
   </script>
