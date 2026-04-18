@@ -3,8 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>계약 전 알릴 의무 사항</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -12,8 +11,7 @@
   
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" as="style" crossorigin
-    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8faff; word-break: keep-all; overflow-x: hidden; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -85,13 +83,13 @@
   </div>
 
   <script>
-    // 🌟 1. 카카오 SDK 안전 초기화 (에러 나도 화면 멈추지 않게 try-catch로 감쌈)
+    // 🌟 카카오 SDK 안전 초기화
     try {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
         Kakao.init('ede488d8dc2ddd6597c3809386e4ab47');
       }
     } catch (e) {
-      console.warn("카카오 초기화 실패 (로컬 접속 중): ", e);
+      console.warn("카카오 초기화 실패: ", e);
     }
 
     const today = new Date();
@@ -303,7 +301,7 @@
 
     function handleActionClick() { if (view === 'intro') { view = 'q'; render(true); return; } if (view === 'q') return; if (view === 'd') validateAndNext(); }
 
-    // 🌟 카카오 에러 대비책: 팝업 띄우기 함수
+    // 🌟 에러 대비: 수동 팝업창
     function showImageModal(dataUrl) {
       const modal = document.createElement('div');
       modal.className = "fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-5 opacity-0 transition-opacity duration-300";
@@ -328,7 +326,7 @@
 
     function closeModal() { const modal = document.getElementById('result-modal'); if(modal) { modal.classList.add('opacity-0'); setTimeout(() => modal.remove(), 300); } }
 
-    // 🌟 핵심 로직: 하이브리드 (카카오 시도 -> 실패 시 팝업으로 자동 전환)
+    // 🌟 버튼 100% 동작을 위한 링크 수정
     async function executeKakaoShare() {
       showToast("이미지를 예쁘게 그리고 있어요... 잠시만요! 📸", false);
       const btnText = document.getElementById('action-text');
@@ -353,30 +351,41 @@
       try {
         const canvas = await html2canvas(captureDiv, { scale: 2, useCORS: true, backgroundColor: '#f8faff' });
         document.body.removeChild(captureDiv);
-        const dataUrl = canvas.toDataURL('image/png'); // 모달창에서 쓸 이미지 주소
+        const dataUrl = canvas.toDataURL('image/png');
 
         canvas.toBlob(async (blob) => {
           const file = new File([blob], 'report.png', { type: 'image/png' });
           
           try {
-            // 카카오 연동 에러 체크
-            if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) { throw new Error("도메인 미등록 등 카카오 SDK 로드 실패"); }
+            if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) { throw new Error("카카오 SDK 로드 실패"); }
             
-            // 1. 카카오 서버 업로드
             const uploadRes = await Kakao.Share.uploadImage({ file: [file] });
             const kakaoImageUrl = uploadRes.infos.original.url;
 
-            // 2. 카카오톡 보내기
+            // 🌟 이 부분이 문제 해결의 핵심! 버튼 링크를 등록된 도메인인 네 깃허브 주소로 변경
             Kakao.Share.sendDefault({
               objectType: 'feed',
-              content: { title: '하나린보험 🌸 알릴 의무 리포트', description: '작성해주신 알릴 의무 체크 결과입니다.', imageUrl: kakaoImageUrl, link: { mobileWebUrl: window.location.href, webUrl: window.location.href } },
-              buttons: [{ title: '이미지 크게 보기', link: { mobileWebUrl: kakaoImageUrl, webUrl: kakaoImageUrl } }]
+              content: { 
+                title: '하나린보험 🌸 알릴 의무 리포트', 
+                description: '작성해주신 체크 결과입니다. 확인을 위해 아래 버튼을 눌러주세요!', 
+                imageUrl: kakaoImageUrl, 
+                link: { 
+                  mobileWebUrl: window.location.href, 
+                  webUrl: window.location.href 
+                } 
+              },
+              buttons: [{ 
+                title: '담당자에게 연락하기', 
+                link: { 
+                  mobileWebUrl: window.location.href, // 카카오 이미지 서버가 아니라 현재 웹사이트 주소로 연결!
+                  webUrl: window.location.href 
+                } 
+              }]
             });
             btnText.innerText = originalText;
           } catch (kakaoErr) {
-            // 🚨 카카오 실패 시: 여기서 자동으로 팝업 모드로 전환!
-            console.warn("카카오톡 전송 실패! 팝업 모드로 자동 전환합니다.", kakaoErr);
-            showToast("카카오 자동 전송이 안 되어 사진 저장 모드로 전환했어요!", false);
+            console.warn("카카오톡 전송 실패", kakaoErr);
+            showToast("자동 전송이 안 되어 사진 저장 모드로 전환했어요!", false);
             showImageModal(dataUrl);
             btnText.innerText = originalText;
           }
