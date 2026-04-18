@@ -307,7 +307,7 @@
       const captureDiv = document.createElement('div');
       captureDiv.id = "capture-area"; captureDiv.style.position = "absolute"; captureDiv.style.left = "-9999px"; captureDiv.style.top = "0"; captureDiv.className = "bg-[#f8faff] p-8 w-[500px] text-slate-800";
       
-      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">하나린보험 🌸</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
+      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">종합보험</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
       for (let i = 0; i < 6; i++) { const isYes = answers[i] === 'yes'; html += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"><span class="font-bold text-slate-600">Q${i + 1}. 해당사항 여부</span> <span class="font-extrabold ${isYes ? 'text-red-500' : 'text-green-600'}">${isYes ? '🔴 예 (있음)' : '🟢 아니오'}</span></li>`; }
       html += `</ul></div>`;
       const filledDiseases = diseases.filter(d => d.name || d.startDate);
@@ -338,7 +338,7 @@
               // 클립보드 복사 실패 시(권한 없음 등) 파일로 다운로드
               console.warn("클립보드 복사 실패, 다운로드로 대체", err);
               const link = document.createElement('a');
-              link.download = '하나린보험_알릴의무_리포트.png';
+              link.download = '종합보험_알릴의무_리포트.png';
               link.href = dataUrl;
               document.body.appendChild(link);
               link.click();
@@ -349,13 +349,13 @@
             }
           } else {
             // 📱 모바일 환경: 시스템 공유 또는 팝업창
-            const file = new File([blob], '하나린보험_알릴의무_리포트.png', { type: 'image/png' });
+            const file = new File([blob], '종합보험_알릴의무_리포트.png', { type: 'image/png' });
             try {
               const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
               if (!isKakao && navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                   files: [file],
-                  title: '하나린보험 🌸 알릴 의무 리포트'
+                  title: '종합보험 알릴 의무 리포트'
                 });
                 btnText.innerText = originalText;
               } else {
