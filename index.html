@@ -368,7 +368,7 @@
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v19_final_share';
+    const STORAGE_KEY = APP_CONFIG?.storageKey || 'insurance_wizard_v20_github_pages';
 
     function saveData() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
@@ -868,7 +868,20 @@
 
     let isViewMode = false;
     let kakaoReady = false;
-    const KAKAO_JS_KEY = 'ede488d8dc2ddd6597c3809386e4ab47';
+
+    // GitHub Pages 배포용 설정
+    // 1) kakaoJsKey: 카카오 디벨로퍼스 JavaScript 키
+    // 2) siteUrl: GitHub Pages 최종 주소
+    //    현재 설정: https://dbqls3312-ai.github.io/insu/
+    //    예) https://username.github.io/repository-name/
+    // window.APP_CONFIG 로 외부에서 덮어쓸 수도 있습니다.
+    const APP_CONFIG = Object.assign({
+      kakaoJsKey: 'ede488d8dc2ddd6597c3809386e4ab47',
+      siteUrl: 'https://dbqls3312-ai.github.io/insu/',
+      storageKey: 'insurance_wizard_v20_github_pages'
+    }, window.APP_CONFIG || {});
+
+    const KAKAO_JS_KEY = APP_CONFIG.kakaoJsKey;
 
     function restoreFromQuery() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -893,6 +906,12 @@
 
     function loadKakaoSdk() {
       return new Promise((resolve) => {
+        if (!KAKAO_JS_KEY) {
+          kakaoReady = false;
+          resolve(false);
+          return;
+        }
+
         if (window.Kakao && window.Kakao.Share) {
           try {
             if (!window.Kakao.isInitialized()) {
@@ -972,13 +991,32 @@
       if (view === 'd') validateAndNext();
     }
 
+    function normalizeSiteUrl(url) {
+      if (!url) return '';
+      return url.endsWith('/') ? url.slice(0, -1) : url;
+    }
+
+    function getCurrentPageBaseUrl() {
+      try {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.origin && currentUrl.origin !== 'null') {
+          return `${currentUrl.origin}${currentUrl.pathname}`.replace(/\/$/, '');
+        }
+      } catch (e) { }
+      return '';
+    }
+
     function buildViewerUrl() {
       const payload = JSON.stringify({ answers, diseases });
       const encData = encodeURIComponent(payload);
-      const currentUrl = new URL(window.location.href);
-      let baseUrl = currentUrl.origin && currentUrl.origin !== 'null'
-        ? `${currentUrl.origin}${currentUrl.pathname}`
-        : 'https://dbqls3312-ai.github.io/';
+      const configuredBase = normalizeSiteUrl(APP_CONFIG.siteUrl);
+      const currentBase = getCurrentPageBaseUrl();
+      const baseUrl = configuredBase || currentBase;
+
+      if (!baseUrl) {
+        throw new Error('배포 주소를 찾지 못했습니다. APP_CONFIG.siteUrl을 설정해주세요.');
+      }
+
       return `${baseUrl}?data=${encData}`;
     }
 
@@ -1115,6 +1153,12 @@
     }
 
     window.addEventListener('DOMContentLoaded', init, { once: true });
+
+
+    // GitHub Pages 배포 팁
+    // - 저장 파일명은 index.html 권장
+    // - 리포지토리 배포 주소 예시: https://username.github.io/repo-name/
+    // - 카카오 디벨로퍼스 Web 도메인에 위 주소를 등록해야 공유 버튼이 동작합니다.
 
   </script>
 </body>
