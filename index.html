@@ -152,30 +152,40 @@
     ];
 
     let step = 0; 
-    let view = 'q'; 
+    let view = 'intro'; 
     let answers = {};
     let diseases = []; 
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v11_safe';
+    const STORAGE_KEY = 'insurance_wizard_v13_intro_fixed';
 
     function saveData() { 
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); 
-      } catch (e) {}
+      } catch (e) { console.warn("Storage restricted"); }
     }
     
+    function loadData() { 
+      try { 
+        const s = localStorage.getItem(STORAGE_KEY); 
+        if(s) { 
+          const p = JSON.parse(s); 
+          step = p.step||0; view = p.view||'intro'; answers = p.answers||{}; diseases = p.diseases||[]; 
+          currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId||1;
+        } 
+      } catch(e){ console.warn("Load failed"); } 
+    }
+
     function resetAll() {
       try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-      step = 0; view = 'q'; answers = {}; diseases = []; currentTabId = null; nextDiseaseId = 1;
+      step = 0; view = 'intro'; answers = {}; diseases = []; currentTabId = null; nextDiseaseId = 1;
       render(true);
       showToast("처음부터 다시 시작합니다.");
     }
 
-    // 뒤로가기 버튼 방어 로직
     window.addEventListener('popstate', function(event) {
-      if (step > 0 || view === 'd') {
+      if (step > 0 || view === 'd' || view === 'q') {
         try { history.pushState(null, null, location.href); } catch(e) {}
         goBack(); 
       }
@@ -188,20 +198,26 @@
       const progressBar = document.getElementById('progress-bar');
       const backBtn = document.getElementById('back-btn');
 
-      const progress = step === 6 ? 100 : Math.round((step / 6) * 100);
-      progressBar.style.width = `${progress}%`;
-
-      backBtn.style.visibility = (step === 0 && view === 'q') ? 'hidden' : 'visible';
-
       container.classList.remove('animate-swipe-left');
       if(animate) void container.offsetWidth; 
       container.classList.add('animate-swipe-left');
 
-      if (step < 6) {
+      if (view === 'intro') {
+        headerTitle.innerText = `작성 안내`;
+        progressBar.style.width = `0%`;
+        backBtn.style.visibility = 'hidden';
+        container.innerHTML = renderIntroView();
+        updateActionBtn('네, 동의하고 시작할게요', false);
+      } 
+      else if (step < 6) {
+        const progress = Math.round(((step) / 6) * 100);
+        progressBar.style.width = `${progress}%`;
+        backBtn.style.visibility = 'visible';
+
         if (view === 'q') {
           headerTitle.innerText = `질문 ${step + 1} / 6`;
           container.innerHTML = renderQuestionView(step);
-          updateActionBtn('질문 선택', true); 
+          updateActionBtn('질문을 선택해주세요', true); 
         } else if (view === 'd') {
           headerTitle.innerText = `상세 입력 (Q${step + 1})`;
           ensureDiseaseExistsForStep(step);
@@ -209,10 +225,43 @@
           updateActionBtn(step === 5 ? '결과 확인하기' : '다음 질문으로', false);
         }
       } else {
+        progressBar.style.width = `100%`;
         headerTitle.innerText = `작성 완료`;
         container.innerHTML = renderSummaryView();
         updateActionBtn('내용 공유하기 (카톡/문자)', false, true);
       }
+    }
+
+    // 🌟 텍스트가 완전히 바뀐 메인 인트로 화면
+    function renderIntroView() {
+      return `
+        <div class="bg-white p-7 rounded-[1.5rem] card-shadow border border-slate-100 flex flex-col items-center text-center mt-2">
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[30px] mb-5 shadow-sm">
+            🛡️
+          </div>
+          <h2 class="text-[22px] font-extrabold text-slate-800 mb-3 leading-[1.4]">
+            질문지에 해당하는 병력만<br>작성해주세요!
+          </h2>
+          <p class="text-[15px] text-slate-500 mb-7 leading-relaxed">
+            묻지 않은 내용까지 적으실 필요 없습니다.<br>각 질문을 잘 읽고 <strong class="text-blue-600">해당하는 경우에만</strong> 작성해주세요.
+          </p>
+
+          <div class="bg-slate-50 rounded-2xl p-5 text-left w-full border border-slate-200 space-y-3.5">
+            <div class="flex items-start gap-2">
+              <span class="text-blue-500 mt-0.5 text-[15px]">✔️</span>
+              <p class="text-[14px] text-slate-600 leading-relaxed"><strong class="text-slate-800">질문에 '예'라고 답한 경우만</strong> 상세 내용을 적어주세요.</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-blue-500 mt-0.5 text-[15px]">✔️</span>
+              <p class="text-[14px] text-slate-600 leading-relaxed"><strong class="text-slate-800">기간(3개월, 1년, 5년)</strong>에 포함되는지 꼭 확인해주세요.</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-blue-500 mt-0.5 text-[15px]">✔️</span>
+              <p class="text-[14px] text-slate-600 leading-relaxed">작성 소요 시간은 약 <strong class="text-slate-800">1~2분</strong>입니다.</p>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function renderQuestionView(idx) {
@@ -509,7 +558,8 @@
 
 
     function goBack() {
-      if(view === 'd') { view = 'q'; render(true); }
+      if(view === 'q' && step === 0) { view = 'intro'; render(true); }
+      else if(view === 'd') { view = 'q'; render(true); }
       else if(step > 0) {
         step--;
         if(answers[step] === 'yes') view = 'd';
@@ -569,21 +619,28 @@
       t.innerText = text;
       b.disabled = disabled;
       
-      if(disabled) {
+      if (view === 'intro') {
+        b.className = "w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-blue-600 text-white shadow-[0_4px_14px_rgba(37,99,235,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 animate-gentle-pulse";
+      } else if(disabled) {
         b.className = "w-full h-[60px] rounded-2xl font-bold text-[18px] bg-slate-200 text-slate-400 cursor-not-allowed transition-all";
       } else {
         b.className = "w-full h-[60px] rounded-2xl font-extrabold text-[18px] bg-slate-800 text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2";
         if(isShare) {
-          b.className = b.className.replace('bg-slate-800', 'bg-blue-600');
+          b.className = b.className.replace('bg-slate-800', 'bg-red-600');
           b.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> <span id="action-text">${text}</span>`;
         }
       }
     }
 
     function handleActionClick() {
-      if(view === 'q') return; 
-      if(view === 'd') validateAndNext();
-      if(step === 6) executeShare();
+      if (view === 'intro') {
+        view = 'q';
+        render(true);
+        return;
+      }
+      if (view === 'q') return; 
+      if (view === 'd') validateAndNext();
+      if (step === 6) executeShare();
     }
 
     async function executeShare() {
@@ -652,7 +709,6 @@
       setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3500);
     }
 
-    // 🌟 에러 발생 시 무조건 화면 렌더링 보장
     function init() { 
       try {
         try { history.pushState(null, null, location.href); } catch(e) {}
@@ -662,7 +718,7 @@
           const s = localStorage.getItem(STORAGE_KEY); 
           if(s) { 
             const p = JSON.parse(s); 
-            step = p.step||0; view = p.view||'q'; answers = p.answers||{}; diseases = p.diseases||[]; 
+            step = p.step||0; view = p.view||'intro'; answers = p.answers||{}; diseases = p.diseases||[]; 
             currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId||1;
             loaded = true;
           } 
@@ -674,7 +730,6 @@
       }
     }
     
-    // 앱 로드 시점 명확화
     window.addEventListener('DOMContentLoaded', () => {
         init();
     });
@@ -682,6 +737,3 @@
   </script>
 </body>
 </html>
-
-
-```
