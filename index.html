@@ -138,7 +138,7 @@
     ];
 
     let step = 0; let view = 'intro'; let answers = {}; let diseases = []; let currentTabId = null; let nextDiseaseId = 1;
-    const STORAGE_KEY = 'insurance_wizard_v27_fixed_date';
+    const STORAGE_KEY = 'insurance_wizard_v28_final_no_hanarin';
 
     function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); } catch (e) { } }
     function loadData() { try { const s = localStorage.getItem(STORAGE_KEY); if (s) { const p = JSON.parse(s); step = p.step || 0; view = p.view || 'intro'; answers = p.answers || {}; diseases = p.diseases || []; currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId || 1; } } catch (e) { } }
@@ -165,7 +165,7 @@
       } else {
         progressBar.style.width = `100%`; headerTitle.innerText = `작성 완료`; 
         container.innerHTML = renderSummaryView(); 
-        updateActionBtn('처음으로 돌아가기', false, true);
+        updateActionBtn('', false, true); 
       }
     }
 
@@ -229,15 +229,28 @@
       if (matched.length) { box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`; } else box.innerHTML = '';
     }
 
-    // 🌟 핵심 로직 1: 완료 화면 구성 (버튼 2개 + 이미지 자동 렌더링)
+    // 🌟 핵심 1: 완료 화면 구성 및 자동 이미지 생성 
     function renderSummaryView() {
+      // 화면 렌더링 직후 이미지 그리기
       setTimeout(generateAndShowImage, 100);
+
+      const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      let guideText = "";
+      if (isKakao) {
+        guideText = "아래 버튼을 누르면 내용이 복사되고<br><strong class='text-slate-700'>카톡 대화방으로 바로 돌아갑니다.</strong>";
+      } else if (isMobile) {
+        guideText = "아래 버튼을 누르면 이 화면이<br><strong class='text-slate-700'>깔끔한 이미지 파일로 공유</strong>됩니다.";
+      } else {
+        guideText = "아래 버튼을 누르면 결과 이미지가<br><strong class='text-slate-700'>클립보드에 바로 복사</strong>됩니다.";
+      }
 
       return `
         <div class="bg-white p-6 rounded-[2rem] card-shadow border border-white/50 text-center relative overflow-hidden mb-4">
           <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 to-indigo-600 text-white rounded-full flex items-center justify-center text-[28px] mx-auto mb-4 shadow-xl">🎉</div>
           <h2 class="text-[22px] font-extrabold text-slate-800 mb-2 tracking-tight">작성이 완료되었습니다!</h2>
-          <p class="text-[14px] text-slate-500 font-medium">내용을 복사하거나 이미지를 저장해 주세요.</p>
+          <p class="text-[14px] text-slate-500 font-medium">${guideText}</p>
         </div>
 
         <div class="grid grid-cols-1 gap-3 mb-6">
@@ -265,6 +278,7 @@
         if (!d.type) { d.typeError = true; isValid = false; if (!msg) msg = "질병/상해 구분을 선택해주세요."; }
         if (!d.name.trim()) { d.nameError = true; isValid = false; if (!msg) msg = d.type === 'disease' ? "어떤 질병인지 입력해주세요." : "사고 내용을 입력해주세요."; }
         if (d.type === 'injury' && !d.bodyPart.trim()) { d.nameError = true; isValid = false; if (!msg) msg = "다친 부위를 입력해주세요."; }
+        
         // 🌟 수정된 날짜 로직: 시작일이 아니라 종료일 기준으로 체크
         if (!d.startDate || !d.endDate) { d.dateError = true; isValid = false; if (!msg) msg = "내원 기간을 입력해주세요."; } 
         else if (new Date(d.startDate) > new Date(d.endDate)) { d.sequenceError = true; isValid = false; if (!msg) msg = "시작일이 종료일보다 늦습니다."; } 
@@ -291,7 +305,7 @@
 
     function handleActionClick() { if (view === 'intro') { view = 'q'; render(true); return; } if (view === 'q') return; if (view === 'd') validateAndNext(); }
 
-    // 🌟 핵심 로직 2: 텍스트 복사 (카톡 환경 체크)
+    // 🌟 핵심 2: 텍스트 복사 로직 (하나린 텍스트 완전 제거됨)
     function copyTextReport() {
       let r = `📋 [계약 전 알릴 의무 리포트]\n작성일시: ${new Date().toLocaleString()}\n\n■ 기본 응답\n`;
       for (let i = 0; i < 6; i++) r += `[Q${i + 1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
@@ -326,12 +340,13 @@
       }
     }
 
-    // 🌟 핵심 로직 3: 이미지 생성 및 공유/다운로드 버튼 생성
+    // 🌟 핵심 3: 이미지 생성 및 공유 로직
     async function generateAndShowImage() {
       const captureDiv = document.createElement('div');
       captureDiv.id = "capture-area"; captureDiv.style.position = "absolute"; captureDiv.style.left = "-9999px"; captureDiv.style.top = "0"; captureDiv.className = "bg-[#f8faff] p-8 w-[500px] text-slate-800";
       
-      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">하나린보험 🌸</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
+      // 타이틀에서 "하나린보험" 문구 제거 및 일반적인 "종합보험 🌸" 사용
+      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">종합보험 🌸</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
       for (let i = 0; i < 6; i++) { const isYes = answers[i] === 'yes'; html += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"><span class="font-bold text-slate-600">Q${i + 1}. 해당사항 여부</span> <span class="font-extrabold ${isYes ? 'text-red-500' : 'text-green-600'}">${isYes ? '🔴 예 (있음)' : '🟢 아니오'}</span></li>`; }
       html += `</ul></div>`;
       const filledDiseases = diseases.filter(d => d.name || d.startDate);
@@ -348,19 +363,23 @@
         document.body.removeChild(captureDiv);
         const dataUrl = canvas.toDataURL('image/png');
         const box = document.getElementById('result-image-box');
+        
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
 
+        let guideMsg = "꾹 눌러서 사진 앱에 저장하세요";
         let extraBtn = "";
 
         if (!isMobile) {
-          extraBtn = `<button onclick="downloadImage('${dataUrl}')" class="w-full mt-3 h-[50px] rounded-xl font-bold text-[15px] bg-indigo-50 text-indigo-700 border border-indigo-200 active:scale-95 transition-all">컴퓨터에 이미지 다운로드</button>`;
+          guideMsg = "우클릭하여 '이미지를 다른 이름으로 저장' 하세요";
+          extraBtn = `<button onclick="downloadImage('${dataUrl}')" class="w-full mt-3 h-[50px] rounded-xl font-bold text-[15px] bg-slate-100 text-slate-700 border border-slate-200 active:scale-95 transition-all">컴퓨터에 이미지 다운로드</button>`;
         } else if (!isKakao && navigator.canShare) {
+          guideMsg = "꾹 눌러서 저장하거나 아래 버튼으로 공유하세요";
           extraBtn = `<button id="native-share-btn" class="w-full mt-3 h-[50px] rounded-xl font-bold text-[15px] bg-indigo-50 text-indigo-700 border border-indigo-200 active:scale-95 transition-all">📤 다른 앱으로 이미지 공유하기</button>`;
         }
 
         box.innerHTML = `
-          <p class="text-[13px] font-bold text-indigo-600 mb-3 bg-indigo-50 px-3 py-1 rounded-full text-center">👇 꾹 눌러서 사진 앱에 저장하세요 👇</p>
+          <p class="text-[13px] font-bold text-indigo-600 mb-3 bg-indigo-50 px-3 py-1 rounded-full text-center">👇 ${guideMsg} 👇</p>
           <img src="${dataUrl}" class="w-full h-auto rounded-xl shadow-md border border-slate-200 allow-select" style="-webkit-touch-callout: default; pointer-events: auto;" alt="알릴의무 리포트">
           ${extraBtn}
         `;
@@ -369,11 +388,12 @@
         if (shareBtn) {
           shareBtn.onclick = () => {
             canvas.toBlob(async (blob) => {
-              const file = new File([blob], '하나린보험_알릴의무_리포트.png', { type: 'image/png' });
+              const file = new File([blob], '알릴의무_리포트.png', { type: 'image/png' });
               try { await navigator.share({ files: [file], title: '알릴 의무 리포트' }); } catch(e) {}
             }, 'image/png');
           };
         }
+
       } catch (err) {
         document.getElementById('result-image-box').innerHTML = `<p class="text-red-500 font-bold text-sm">이미지 생성 중 오류가 발생했습니다.</p>`;
         if(document.body.contains(captureDiv)) document.body.removeChild(captureDiv);
@@ -382,7 +402,7 @@
 
     function downloadImage(dataUrl) {
       const link = document.createElement('a');
-      link.download = '하나린보험_알릴의무_리포트.png';
+      link.download = '알릴의무_리포트.png'; // 파일명 수정됨
       link.href = dataUrl;
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
