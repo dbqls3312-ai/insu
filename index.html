@@ -867,31 +867,67 @@
     }
 
     let isViewMode = false;
+    let kakaoReady = false;
+    const KAKAO_JS_KEY = 'ede488d8dc2ddd6597c3809386e4ab47';
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const script = document.createElement('script');
-      script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js";
-      script.integrity = "sha384-TiCmbV6A3q7y0vMwS6I28t28B4S4AylF2S2vRQe5hA+qgX7xWv/eR2r2f0aRYkK0";
-      script.crossOrigin = "anonymous";
-      script.onload = () => { Kakao.init('ede488d8dc2ddd6597c3809386e4ab47'); };
-      document.head.appendChild(script);
-
+    function restoreFromQuery() {
       const urlParams = new URLSearchParams(window.location.search);
       const encData = urlParams.get('data');
-      if (encData) {
-        try {
-          const parsed = JSON.parse(decodeURIComponent(encData));
-          if (parsed.answers) answers = parsed.answers;
-          if (parsed.diseases) diseases = parsed.diseases;
-          isViewMode = true;
-          view = 'summary';
-          render(false);
-          return;
-        } catch (e) {
-          alert('데이터를 정상적으로 불러오지 못했습니다.');
-        }
+      if (!encData) return false;
+
+      try {
+        const parsed = JSON.parse(decodeURIComponent(encData));
+        answers = parsed.answers || {};
+        diseases = parsed.diseases || [];
+        step = 6;
+        view = 'summary';
+        currentTabId = diseases[0]?.id ?? null;
+        nextDiseaseId = Math.max(1, ...diseases.map(d => Number(d.id) || 0)) + 1;
+        isViewMode = true;
+        return true;
+      } catch (e) {
+        alert('데이터를 정상적으로 불러오지 못했습니다.');
+        return false;
       }
-    });
+    }
+
+    function loadKakaoSdk() {
+      return new Promise((resolve) => {
+        if (window.Kakao && window.Kakao.Share) {
+          try {
+            if (!window.Kakao.isInitialized()) {
+              window.Kakao.init(KAKAO_JS_KEY);
+            }
+            kakaoReady = true;
+          } catch (e) {
+            kakaoReady = false;
+          }
+          resolve(kakaoReady);
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => {
+          try {
+            if (!window.Kakao.isInitialized()) {
+              window.Kakao.init(KAKAO_JS_KEY);
+            }
+            kakaoReady = true;
+          } catch (e) {
+            kakaoReady = false;
+            console.warn('Kakao SDK init failed:', e);
+          }
+          resolve(kakaoReady);
+        };
+        script.onerror = () => {
+          kakaoReady = false;
+          resolve(false);
+        };
+        document.head.appendChild(script);
+      });
+    }
 
     // 🌟 핵심 로직: 공유하기(단일 버튼) 렌더링
     function updateActionBtn(text, disabled, isShare = false) {
@@ -936,62 +972,92 @@
       if (view === 'd') validateAndNext();
     }
 
-    function sendKakaoLink() {
-      try {
-        const payload = JSON.stringify({ answers, diseases });
-        // 데이터 암호화 밑 한글 깨짐 방지를 위해 순수 URI 인코딩만 수행
-        const encData = encodeURIComponent(payload);
-        
-        let baseUrl = window.location.href.split('?')[0];
-        // 바탕화면(로컬)에서 직접 파일 실행 시 카카오 SDK 권한 에러 해결을 위해 가짜 도메인 임시 세팅
-        if (!baseUrl.startsWith('http')) {
-           baseUrl = 'https://dbqls3312-ai.github.io/';
-        }
-        const url = baseUrl + '?data=' + encData;
-        
-        const illCount = diseases.filter(d => d.name || d.startDate).length;
-        const textSum = `보험 사전고지 작성이 모두 완료되었습니다! ✨\n\n📌 요약: 기록된 상세 상해/질환 개수 총 ${illCount}건\n\n아래 '상세 확인 (뷰어)' 버튼을 눌러 담당 고객님이 작성하신 전체 내용을 꼼꼼히 검토해주세요!`;
+    function buildViewerUrl() {
+      const payload = JSON.stringify({ answers, diseases });
+      const encData = encodeURIComponent(payload);
+      const currentUrl = new URL(window.location.href);
+      let baseUrl = currentUrl.origin && currentUrl.origin !== 'null'
+        ? `${currentUrl.origin}${currentUrl.pathname}`
+        : 'https://dbqls3312-ai.github.io/';
+      return `${baseUrl}?data=${encData}`;
+    }
 
-        Kakao.Share.sendDefault({
+    async function sendKakaoLink() {
+      try {
+        const url = buildViewerUrl();
+        if (url.length > 1800) {
+          throw new Error('공유 링크가 너무 길어서 카카오 공유가 어렵습니다. 전체 텍스트 복사를 사용해주세요.');
+        }
+
+        if (!kakaoReady || !window.Kakao || !window.Kakao.Share) {
+          throw new Error('카카오 공유 SDK가 아직 준비되지 않았습니다.');
+        }
+
+        const illCount = diseases.filter(d => d.name || d.startDate).length;
+        const textSum = `보험 사전고지 작성이 완료되었습니다.\n상세 병력 ${illCount}건이 기록되어 있습니다.\n아래 버튼으로 전체 내용을 확인해주세요.`;
+
+        window.Kakao.Share.sendDefault({
           objectType: 'text',
           text: textSum,
           link: {
             mobileWebUrl: url,
             webUrl: url,
           },
-          buttonTitle: '상세 확인 (뷰어)'
+          buttonTitle: '상세 확인하기'
         });
-      } catch(e) {
-        alert("카카오 링크 생성 오류:\n" + e.message + "\n\n(참고: PC 화면에서 HTML 파일을 더블클릭으로 켜셨다면 카카오 보안 정책상 오류가 날 수 있습니다.)\n하단의 '전체 텍스트 수동 복사'를 눌러 공유해주세요.");
+      } catch (e) {
+        alert('카카오 링크 공유를 진행할 수 없습니다.\n\n' + e.message + '\n\n전체 텍스트 복사 버튼으로 보내주세요.');
       }
     }
 
-    function copyFullText() {
+    async function copyFullText() {
       const text = generateReportText();
-      syncCopy(text);
+      const copied = await syncCopy(text);
       const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
-      
+
+      if (!copied) {
+        alert('복사 권한이 차단되었습니다. 텍스트를 직접 선택해서 복사해주세요.');
+        return;
+      }
+
       if (isKakao) {
-        alert("✅ 전체 내용이 안전하게 복사되었습니다.\n\n[확인]을 누르시면 원래 대화방으로 되돌아갑니다.\n문자 입력창을 꾹 눌러서 '붙여넣기' 해주세요!");
-        window.location.href = 'kakaotalk://inappbrowser/close';
+        alert('✅ 전체 내용이 복사되었습니다.\n\n확인을 누르면 이전 카카오톡 화면으로 돌아갑니다.\n입력창을 길게 눌러 붙여넣기 해주세요.');
+        try {
+          window.location.href = 'kakaotalk://inappbrowser/close';
+          setTimeout(() => window.close(), 300);
+        } catch (e) {
+          window.close();
+        }
       } else {
-        showToast("✅ 전체 텍스트가 복사되었습니다!<br>원하시는 곳에 '붙여넣기' 해주세요.", false);
+        showToast('✅ 전체 텍스트가 복사되었습니다!<br>원하시는 곳에 붙여넣기 해주세요.', false);
       }
     }
 
-    function syncCopy(text) {
-      const ta = document.createElement("textarea");
+    async function syncCopy(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (err) {
+          console.warn('clipboard API failed, falling back', err);
+        }
+      }
+
+      const ta = document.createElement('textarea');
       ta.value = text;
-      // 화면이 스크롤되어 튀는 현상 방지
-      ta.style.position = "fixed";
-      ta.style.top = "0";
-      ta.style.left = "0";
-      ta.style.opacity = "0";
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      try { document.execCommand('copy'); } catch (err) {}
+      ta.setSelectionRange(0, ta.value.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
       document.body.removeChild(ta);
+      return ok;
     }
 
     function generateReportText() {
@@ -1031,29 +1097,24 @@
       setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3500);
     }
 
-    function init() {
+    async function init() {
       try {
         try { history.pushState(null, null, location.href); } catch (e) { }
-        let loaded = false;
-        try {
-          const s = localStorage.getItem(STORAGE_KEY);
-          if (s) {
-            const p = JSON.parse(s);
-            step = p.step || 0; view = p.view || 'intro'; answers = p.answers || {}; diseases = p.diseases || [];
-            currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId || 1;
-            loaded = true;
-          }
-        } catch (e) { }
+
+        const restoredFromQuery = restoreFromQuery();
+        if (!restoredFromQuery) {
+          loadData();
+        }
+
+        await loadKakaoSdk();
       } catch (err) {
-        console.warn("Init error bypass");
+        console.warn('Init error bypass', err);
       } finally {
         render(false);
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      init();
-    });
+    window.addEventListener('DOMContentLoaded', init, { once: true });
 
   </script>
 </body>
