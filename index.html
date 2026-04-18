@@ -437,7 +437,6 @@
         progressBar.style.width = `100%`;
         headerTitle.innerText = `작성 완료`;
         container.innerHTML = renderSummaryView();
-        // 🌟 완료 화면에서는 통합된 단일 이미지 공유 버튼 출력
         updateActionBtn('이미지로 저장/공유하기', false, true);
       }
     }
@@ -782,12 +781,12 @@
         <div class="relative z-10">
           <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center text-[36px] mx-auto mb-6 shadow-xl shadow-green-500/30 ring-8 ring-green-50 border-4 border-white transform scale-110">🎉</div>
           <h2 class="text-[24px] font-extrabold text-slate-800 mb-3 tracking-tight">작성이 완료되었습니다!</h2>
-          <p class="text-[15.5px] text-slate-500 mb-8 font-medium">아래 버튼을 누르면 이 화면이<br><strong class="text-slate-700">리포트 이미지로 자동 변환</strong>되어 공유됩니다.</p>
+          <p class="text-[15.5px] text-slate-500 mb-8 font-medium">아래 버튼을 누르면 이 화면이<br><strong class="text-slate-700">리포트 이미지로 자동 변환</strong>됩니다.</p>
           
           <div class="bg-slate-50/80 backdrop-blur-sm rounded-[1.5rem] p-6 text-left border border-slate-100 shadow-inner">
             <h3 class="font-extrabold text-slate-700 mb-4 border-b border-slate-200/60 pb-3 text-[15px] flex items-center justify-between">
               <span>체크 결과 요약</span>
-              <span class="text-[12px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md font-bold">이미지 생성 대기</span>
+              <span class="text-[12px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md font-bold">결과 확인 완료</span>
             </h3>
             <ul class="space-y-3 text-[14.5px] font-medium">`;
 
@@ -871,9 +870,9 @@
         bContainer.innerHTML = `
           <button id="action-btn" onclick="executeShare()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-indigo-600 hover:bg-indigo-700 text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span id="action-text">결과를 이미지로 받기</span>
+            <span id="action-text">결과를 이미지로 만들기</span>
           </button>
-          <p class="text-center text-[13px] font-bold text-slate-400 mt-3 mb-1">버튼을 누르면 1~2초 뒤에 이미지 캡처가 완료됩니다</p>
+          <p class="text-center text-[13px] font-bold text-slate-400 mt-3 mb-1">버튼을 누르면 예쁜 리포트 이미지가 생성됩니다</p>
         `;
       } else {
         if (view === 'intro') {
@@ -892,17 +891,52 @@
       if (view === 'd') validateAndNext();
     }
 
-    // 🌟 핵심 로직: 캡처 전용 숨김 UI를 만들고 html2canvas로 찍어낸 뒤 공유
+    // 🌟 카카오톡 인앱 브라우저를 우회하기 위한 팝업창(모달) 생성 함수
+    function showImageModal(dataUrl) {
+      const modal = document.createElement('div');
+      modal.className = "fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-5 opacity-0 transition-opacity duration-300";
+      modal.id = "result-modal";
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh] transform transition-all scale-95" id="modal-card">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center shrink-0">
+            <h3 class="font-extrabold text-slate-800 text-[16px] flex items-center gap-1.5"><span class="text-[20px]">👆</span> 길게 눌러서 저장/복사</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5 shadow-sm active:scale-90 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4 flex justify-center bg-slate-100 relative">
+            <img src="${dataUrl}" class="w-full h-auto rounded-xl shadow-md border border-slate-200 relative z-10 allow-select" alt="알릴의무 리포트" style="-webkit-touch-callout: default; pointer-events: auto;">
+          </div>
+          <div class="p-4 bg-white border-t border-slate-100 text-center shrink-0">
+            <p class="text-[14px] font-bold text-slate-600 leading-relaxed"><span class="text-indigo-600 font-extrabold">이미지를 꾹 누르면</span> 메뉴가 나옵니다.<br>'이미지 저장' 또는 '복사'를 선택해주세요!</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // 약간의 딜레이를 주어 부드럽게 창이 뜨는 애니메이션 적용
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('modal-card').classList.remove('scale-95');
+      }, 10);
+    }
+
+    // 팝업창 닫기 함수
+    function closeModal() {
+      const modal = document.getElementById('result-modal');
+      if(modal) {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
+
     async function executeShare() {
       showToast("이미지를 예쁘게 그리고 있어요... 잠시만요! 📸", false);
       const btnText = document.getElementById('action-text');
       const originalText = btnText.innerText;
       btnText.innerText = "캡처 진행 중...";
 
-      // 화면에 안 보이는 곳에 리포트 템플릿 생성 (캡처용)
+      // 화면 밖에서 캡처용 UI 생성
       const captureDiv = document.createElement('div');
       captureDiv.id = "capture-area";
-      // 화면 밖으로 밀어내어 고객 눈에는 안 보이게 함
       captureDiv.style.position = "absolute";
       captureDiv.style.left = "-9999px";
       captureDiv.style.top = "0";
@@ -956,40 +990,41 @@
       document.body.appendChild(captureDiv);
 
       try {
-        // html2canvas 실행
         const canvas = await html2canvas(captureDiv, { scale: 2, useCORS: true, backgroundColor: '#f8faff' });
         document.body.removeChild(captureDiv);
         
-        canvas.toBlob(async (blob) => {
-          const file = new File([blob], '알릴의무_리포트.png', { type: 'image/png' });
-          
-          // Web Share API가 파일을 지원하는 최신 기기인지 체크
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: '알릴의무 리포트',
-                text: '작성해주신 알릴 의무 리포트 이미지입니다.'
-              });
-              btnText.innerText = originalText;
-            } catch (err) {
-              console.log('공유 취소됨', err);
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // 🌟 카카오톡, 네이버 앱 등 인앱 브라우저인지 검사
+        const isKakao = /KAKAOTALK|NAVER|Daum|Line/i.test(navigator.userAgent);
+        
+        if (!isKakao && navigator.canShare) {
+          canvas.toBlob(async (blob) => {
+            const file = new File([blob], '알릴의무_리포트.png', { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              try {
+                // 정상 브라우저면 기존 시스템 공유창 띄우기
+                await navigator.share({ files: [file], title: '알릴의무 리포트' });
+                btnText.innerText = originalText;
+              } catch (err) {
+                // 공유 취소하거나 에러나면 팝업창 띄우기
+                showImageModal(dataUrl);
+                btnText.innerText = originalText;
+              }
+            } else {
+              showImageModal(dataUrl);
               btnText.innerText = originalText;
             }
-          } else {
-            // 파일을 바로 넘겨주는 기능이 없는 구형 기기나 PC인 경우, 즉시 다운로드 되도록 처리
-            const link = document.createElement('a');
-            link.download = '알릴의무_리포트.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            showToast("✅ 기기에서 이미지 바로 공유를 지원하지 않아 갤러리(다운로드 폴더)에 자동 저장했습니다!", false);
-            btnText.innerText = originalText;
-          }
-        }, 'image/png');
+          }, 'image/png');
+        } else {
+          // 카카오톡 브라우저면 무조건 길게 눌러 저장하는 팝업창 띄우기
+          showImageModal(dataUrl);
+          btnText.innerText = originalText;
+        }
 
       } catch (err) {
         console.error(err);
-        showToast("이미지 생성 중 오류가 발생했습니다. 브라우저를 확인해주세요.", true);
+        showToast("이미지 생성 중 오류가 발생했습니다. 캡처 기능이 지원되지 않는 브라우저일 수 있습니다.", true);
         btnText.innerText = originalText;
         if(document.body.contains(captureDiv)) document.body.removeChild(captureDiv);
       }
