@@ -3,18 +3,15 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>계약 전 알릴 의무 사항</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   
-  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
-  integrity="sha384-TiCmbV0X04/m03i1gP2w1lEIfX0Z8e6y9+K8oR1p8Ff1/Hw8jO00i1x1A0eT2K9s" crossorigin="anonymous"></script>
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" as="style" crossorigin
-    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8faff; word-break: keep-all; overflow-x: hidden; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -82,9 +79,14 @@
   </div>
 
   <script>
-    // 🌟 카카오 SDK 초기화 (네가 준 앱 키 사용)
-    if (!Kakao.isInitialized()) {
-      Kakao.init('ede488d8dc2ddd6597c3809386e4ab47');
+    // 🌟 카카오 SDK 초기화 (에러 방어 코드 적용)
+    try {
+      if (!Kakao.isInitialized()) {
+        Kakao.init('ede488d8dc2ddd6597c3809386e4ab47');
+      }
+    } catch (e) {
+      console.warn("카카오 SDK 초기화 실패 (도메인 미등록 또는 로컬 실행 중): ", e);
+      // 에러가 나더라도 아래 화면 렌더링은 진행되도록 처리
     }
 
     const today = new Date();
@@ -473,7 +475,7 @@
 
     function handleActionClick() { if (view === 'intro') { view = 'q'; render(true); return; } if (view === 'q') return; if (view === 'd') validateAndNext(); }
 
-    // 🌟 핵심 로직: 캔버스로 이미지 만들어서 카카오 서버에 올린 다음 공유하기!
+    // 🌟 핵심 로직: 캔버스로 이미지 만들어서 카카오 서버에 올린 다음 메시지 쏘기!
     async function executeKakaoShare() {
       showToast("카카오톡으로 보낼 이미지를 준비 중이에요... 📸", false);
       const btnText = document.getElementById('action-text');
@@ -488,7 +490,7 @@
       captureDiv.style.top = "0";
       captureDiv.className = "bg-[#f8faff] p-8 w-[500px] text-slate-800";
       
-      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">하나린보험 🌸</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
+      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">종합보험</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
       for (let i = 0; i < 6; i++) {
         const isYes = answers[i] === 'yes';
         html += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"><span class="font-bold text-slate-600">Q${i + 1}. 해당사항 여부</span> <span class="font-extrabold ${isYes ? 'text-red-500' : 'text-green-600'}">${isYes ? '🔴 예 (있음)' : '🟢 아니오'}</span></li>`;
@@ -525,15 +527,15 @@
             });
             const kakaoImageUrl = uploadRes.infos.original.url;
 
-            // 2. 받은 URL을 써서 카카오톡 메세지 피드 보내기
+            // 2. 받은 URL을 써서 카카오톡 메세지 템플릿 보내기
             Kakao.Share.sendDefault({
               objectType: 'feed',
               content: {
-                title: '하나린보험 🌸 알릴 의무 리포트',
-                description: '작성하신 알릴 의무 리포트 결과입니다. 등록된 이미지를 확인해주세요!',
+                title: '종합보험 알릴 의무 리포트',
+                description: '작성해주신 알릴 의무 체크 결과입니다. 아래 버튼을 눌러 확인해 주세요!',
                 imageUrl: kakaoImageUrl,
                 link: {
-                  mobileWebUrl: window.location.href, // 네 블로그 주소로 바꿔도 됨
+                  mobileWebUrl: window.location.href, // 네 도메인 주소
                   webUrl: window.location.href
                 }
               },
@@ -541,7 +543,7 @@
                 {
                   title: '이미지 크게 보기',
                   link: {
-                    mobileWebUrl: kakaoImageUrl, // 버튼 누르면 원본 이미지 뜸
+                    mobileWebUrl: kakaoImageUrl, // 버튼 누르면 원본 캡처 이미지 열림
                     webUrl: kakaoImageUrl
                   }
                 }
@@ -550,7 +552,7 @@
             btnText.innerText = originalText;
           } catch (kakaoErr) {
             console.error(kakaoErr);
-            showToast("카카오톡 연동 에러! 등록된 도메인인지 확인해주세요.", true);
+            showToast("보안 에러! 파일을 그냥 열지 말고, 등록된 웹 주소로 접속해 주세요.", true);
             btnText.innerText = originalText;
           }
         }, 'image/png');
