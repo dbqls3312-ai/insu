@@ -888,45 +888,55 @@
         }
       }
     }
-
     function handleActionClick() {
       if (view === 'intro') { view = 'q'; render(true); return; }
       if (view === 'q') return;
       if (view === 'd') validateAndNext();
     }
 
-    // 🌟 1. 모바일에서는 Web Share API 시도, PC에서는 무조건 복사(fallback)
+    // 🌟 모바일 호환성 극대화: 
+    // 모바일 브라우저(Safari, 카톡 인앱 등)는 비동기(await) 이후의 복사를 보안상 차단합니다.
+    // 따라서 버튼을 누르는 즉시 동기적으로(Synchronously) 복사를 선행합니다.
     async function executeShare() {
       const text = generateReportText();
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+      // 1. 버튼 클릭과 동시에 무조건 클립보드에 복사해 둡니다 (보안 차단 우회)
+      syncCopy(text);
+
+      // 2. 모바일이라면 네이티브 공유 앱 선택 팝업(Web Share API) 호출
       if (isMobile && navigator.share) {
         try {
           await navigator.share({
             title: '계약 전 알릴 의무 리포트',
             text: text
           });
-          return; // 정상적으로 공유창이 뜨면 종료
         }
         catch (err) {
-          // 고객이 공유창 띄운 후 [취소]를 눌렀을 때는 가만히 둠
+          // 카톡 브라우저 환경 등으로 네이티브 공유창이 막히거나 에러가 났을 때
+          // 이미 1번에서 복사해두었으므로 안내 팝업만 띄웁니다.
           if (err.name !== 'AbortError') {
-            copyFallback(text); // 카톡 브라우저에서 강제 차단당하면 이리로 넘어옴
+             showToast("✅ 내용이 클립보드에 복사되었습니다!<br>상담 중이던 <strong>카톡 대화창</strong>에<br>바로 '붙여넣기(P)' 해주세요!", false);
           }
         }
       } else {
-        // PC 환경이거나 Web Share를 지원하지 않는 경우 무조건 복사 작동
-        copyFallback(text);
+        // PC 환경이거나 Web Share를 아예 지원하지 않는 경우
+        showToast("✅ 내용이 클립보드에 복사되었습니다!<br>카톡 대화창에 '붙여넣기' 해주세요!", false);
       }
     }
 
-    function copyFallback(text) {
-      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
-      if (document.execCommand('copy')) {
-        showToast("✅ 내용이 안전하게 복사되었습니다!<br>상담 중이던 <strong>대화창</strong>에<br>바로 '붙여넣기' 해주세요", false);
-      } else {
-        showToast("복사 실패", true);
-      }
+    function syncCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      // 화면이 스크롤되어 튀는 현상 방지
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.left = "0";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) {}
       document.body.removeChild(ta);
     }
 
