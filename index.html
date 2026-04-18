@@ -7,7 +7,6 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>계약 전 알릴 의무 사항</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="stylesheet" as="style" crossorigin
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
@@ -254,7 +253,8 @@
           </svg>
           <span class="text-[13px] tracking-tight">이전</span>
         </button>
-        <span id="header-title" class="font-extrabold text-[17px] tracking-tight truncate mx-2 text-slate-800">계약 전 알릴 의무</span>
+        <span id="header-title" class="font-extrabold text-[17px] tracking-tight truncate mx-2 text-slate-800">계약 전 알릴
+          의무</span>
         <button onclick="resetAll()"
           class="text-[13px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1 shrink-0 hover:bg-slate-100">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,7 +368,7 @@
     let currentTabId = null;
     let nextDiseaseId = 1;
 
-    const STORAGE_KEY = 'insurance_wizard_v19_final_share_img';
+    const STORAGE_KEY = 'insurance_wizard_v19_final_share';
 
     function saveData() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, view, answers, diseases, currentTabId, nextDiseaseId })); }
@@ -437,7 +437,8 @@
         progressBar.style.width = `100%`;
         headerTitle.innerText = `작성 완료`;
         container.innerHTML = renderSummaryView();
-        updateActionBtn('이미지로 저장/공유하기', false, true);
+        // 🌟 완료 화면에서는 통합된 단일 공유 버튼 출력
+        updateActionBtn('내용 공유하기', false, true);
       }
     }
 
@@ -491,6 +492,7 @@
           html += `<div class="pointer-events-none w-full h-full">${inner}</div>`;
         }
 
+        // Close 3-col grid and start 2-col grid for the last two items
         if (idx === 8) {
           html += '</div><div class="grid grid-cols-2 gap-1.5 w-full mt-1.5">';
         }
@@ -780,13 +782,13 @@
         <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-100 to-emerald-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-70"></div>
         <div class="relative z-10">
           <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center text-[36px] mx-auto mb-6 shadow-xl shadow-green-500/30 ring-8 ring-green-50 border-4 border-white transform scale-110">🎉</div>
-          <h2 class="text-[24px] font-extrabold text-slate-800 mb-3 tracking-tight">작성이 완료되었습니다!</h2>
-          <p class="text-[15.5px] text-slate-500 mb-8 font-medium">아래 버튼을 누르면 이 화면이<br><strong class="text-slate-700">리포트 이미지로 자동 변환</strong>됩니다.</p>
+          <h2 class="text-[24px] font-extrabold text-slate-800 mb-3 tracking-tight">${typeof isViewMode !== 'undefined' && isViewMode ? '고객님의 상세 병력 고지안' : '작성이 완료되었습니다!'}</h2>
+          <p class="text-[15.5px] text-slate-500 mb-8 font-medium">${typeof isViewMode !== 'undefined' && isViewMode ? '<span class="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded">담당자 확인용</span> 리포트 뷰어입니다.' : '원하시는 공유 형태를<br><strong class="text-slate-700">아래 버튼 중에서</strong> 선택하여 보내주세요!'}</p>
           
           <div class="bg-slate-50/80 backdrop-blur-sm rounded-[1.5rem] p-6 text-left border border-slate-100 shadow-inner">
             <h3 class="font-extrabold text-slate-700 mb-4 border-b border-slate-200/60 pb-3 text-[15px] flex items-center justify-between">
               <span>체크 결과 요약</span>
-              <span class="text-[12px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md font-bold">결과 확인 완료</span>
+              ${typeof isViewMode !== 'undefined' && isViewMode ? '<span class="text-[12px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md font-bold">읽기 전용</span>' : '<span class="text-[12px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md font-bold">확인용</span>'}
             </h3>
             <ul class="space-y-3 text-[14.5px] font-medium">`;
 
@@ -806,6 +808,7 @@
       </div>`;
       return html;
     }
+
 
     function goBack() {
       if (view === 'q' && step === 0) { view = 'intro'; render(true); }
@@ -863,16 +866,89 @@
       goNext();
     }
 
+    let isViewMode = false;
+
+    const APP_CONFIG = {
+      siteUrl: 'https://dbqls3312-ai.github.io/insu/',
+      kakaoJsKey: 'ede488d8dc2ddd6597c3809386e4ab47'
+    };
+
+    function loadKakaoSdkSafely() {
+      try {
+        if (window.Kakao && APP_CONFIG.kakaoJsKey && !window.Kakao.isInitialized()) {
+          window.Kakao.init(APP_CONFIG.kakaoJsKey);
+          return;
+        }
+        const existing = document.querySelector('script[data-kakao-sdk="1"]');
+        if (existing) return;
+        const script = document.createElement('script');
+        script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+        script.crossOrigin = 'anonymous';
+        script.dataset.kakaoSdk = '1';
+        script.onload = () => {
+          try {
+            if (window.Kakao && APP_CONFIG.kakaoJsKey && !window.Kakao.isInitialized()) {
+              window.Kakao.init(APP_CONFIG.kakaoJsKey);
+            }
+          } catch (e) {
+            console.warn('Kakao init skipped:', e);
+          }
+        };
+        script.onerror = () => {
+          console.warn('Kakao SDK load failed');
+        };
+        document.head.appendChild(script);
+      } catch (e) {
+        console.warn('Kakao SDK setup failed:', e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadKakaoSdkSafely();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const encData = urlParams.get('data');
+      if (encData) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(encData));
+          if (parsed.answers) answers = parsed.answers;
+          if (parsed.diseases) diseases = parsed.diseases;
+          isViewMode = true;
+          view = 'summary';
+          render(false);
+          return;
+        } catch (e) {
+          alert('데이터를 정상적으로 불러오지 못했습니다.');
+        }
+      }
+    });
+
+    // 🌟 핵심 로직: 공유하기(단일 버튼) 렌더링
     function updateActionBtn(text, disabled, isShare = false) {
       const bContainer = document.getElementById('action-btn-container');
 
       if (isShare) {
+        if (isViewMode) {
+          bContainer.innerHTML = `
+            <button onclick="window.location.href=window.location.href.split('?')[0]" class="w-full h-[60px] rounded-2xl font-extrabold text-[17px] bg-slate-800 text-white shadow-lg shadow-slate-800/20 active:scale-95 transition-all">
+              나도 새로운 질문지 작성하기
+            </button>
+          `;
+          return;
+        }
+
         bContainer.innerHTML = `
-          <button id="action-btn" onclick="executeShare()" class="w-full h-[64px] rounded-2xl font-extrabold text-[18px] bg-indigo-600 hover:bg-indigo-700 text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span id="action-text">결과를 이미지로 만들기</span>
-          </button>
-          <p class="text-center text-[13px] font-bold text-slate-400 mt-3 mb-1">버튼을 누르면 예쁜 리포트 이미지가 생성됩니다</p>
+          <div class="flex flex-col gap-3 object-contain w-full">
+            <button onclick="sendKakaoLink()" class="w-full h-[60px] rounded-2xl font-extrabold text-[17px] bg-[#FEE500] hover:bg-[#F4DC00] text-[#000000] shadow-md shadow-[#FEE500]/30 active:scale-95 transition-all flex items-center justify-center gap-2">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-5.523 0-10 3.51-10 7.846 0 2.802 1.83 5.257 4.545 6.551-.309 1.135-1.12 4.14-1.144 4.25-.03.136.044.204.137.144.072-.047 3.315-2.222 4.67-3.134.58.077 1.173.118 1.792.118 5.523 0 10-3.51 10-7.846S17.523 3 12 3z"/></svg> 
+              카톡 공유 (요약 + 링크 ⭐️)
+            </button>
+            <button onclick="copyFullText()" class="w-full h-[60px] rounded-2xl font-extrabold text-[16.5px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+              전체 텍스트 수동 복사
+            </button>
+          </div>
+          <p class="text-center text-[13px] font-bold text-slate-400 mt-4 mb-1">상황에 맞는 최고의 공유 방식을 선택하세요</p>
         `;
       } else {
         if (view === 'intro') {
@@ -884,150 +960,99 @@
         }
       }
     }
-
     function handleActionClick() {
       if (view === 'intro') { view = 'q'; render(true); return; }
       if (view === 'q') return;
       if (view === 'd') validateAndNext();
     }
 
-    // 🌟 카카오톡 인앱 브라우저를 우회하기 위한 팝업창(모달) 생성 함수
-    function showImageModal(dataUrl) {
-      const modal = document.createElement('div');
-      modal.className = "fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-5 opacity-0 transition-opacity duration-300";
-      modal.id = "result-modal";
-      modal.innerHTML = `
-        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh] transform transition-all scale-95" id="modal-card">
-          <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center shrink-0">
-            <h3 class="font-extrabold text-slate-800 text-[16px] flex items-center gap-1.5"><span class="text-[20px]">👆</span> 길게 눌러서 저장/복사</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5 shadow-sm active:scale-90 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-          </div>
-          <div class="flex-1 overflow-y-auto p-4 flex justify-center bg-slate-100 relative">
-            <img src="${dataUrl}" class="w-full h-auto rounded-xl shadow-md border border-slate-200 relative z-10 allow-select" alt="알릴의무 리포트" style="-webkit-touch-callout: default; pointer-events: auto;">
-          </div>
-          <div class="p-4 bg-white border-t border-slate-100 text-center shrink-0">
-            <p class="text-[14px] font-bold text-slate-600 leading-relaxed"><span class="text-indigo-600 font-extrabold">이미지를 꾹 누르면</span> 메뉴가 나옵니다.<br>'이미지 저장' 또는 '복사'를 선택해주세요!</p>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      
-      // 약간의 딜레이를 주어 부드럽게 창이 뜨는 애니메이션 적용
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        document.getElementById('modal-card').classList.remove('scale-95');
-      }, 10);
-    }
+    function sendKakaoLink() {
+      try {
+        const payload = JSON.stringify({ answers, diseases });
+        // 데이터 암호화 밑 한글 깨짐 방지를 위해 순수 URI 인코딩만 수행
+        const encData = encodeURIComponent(payload);
+        
+        let baseUrl = window.location.href.split('?')[0];
+        if (!baseUrl.startsWith('http')) {
+           baseUrl = APP_CONFIG.siteUrl;
+        }
+        const url = baseUrl + '?data=' + encData;
+        
+        const illCount = diseases.filter(d => d.name || d.startDate).length;
+        const textSum = `보험 사전고지 작성이 모두 완료되었습니다! ✨\n\n📌 요약: 기록된 상세 상해/질환 개수 총 ${illCount}건\n\n아래 '상세 확인 (뷰어)' 버튼을 눌러 담당 고객님이 작성하신 전체 내용을 꼼꼼히 검토해주세요!`;
 
-    // 팝업창 닫기 함수
-    function closeModal() {
-      const modal = document.getElementById('result-modal');
-      if(modal) {
-        modal.classList.add('opacity-0');
-        setTimeout(() => modal.remove(), 300);
+        if (!(window.Kakao && window.Kakao.Share)) {
+          throw new Error('카카오 SDK가 아직 준비되지 않았습니다.');
+        }
+        Kakao.Share.sendDefault({
+          objectType: 'text',
+          text: textSum,
+          link: {
+            mobileWebUrl: url,
+            webUrl: url,
+          },
+          buttonTitle: '상세 확인 (뷰어)'
+        });
+      } catch(e) {
+        alert("카카오 링크 생성 오류:\n" + e.message + "\n\n(참고: PC 화면에서 HTML 파일을 더블클릭으로 켜셨다면 카카오 보안 정책상 오류가 날 수 있습니다.)\n하단의 '전체 텍스트 수동 복사'를 눌러 공유해주세요.");
       }
     }
 
-    async function executeShare() {
-      showToast("이미지를 예쁘게 그리고 있어요... 잠시만요! 📸", false);
-      const btnText = document.getElementById('action-text');
-      const originalText = btnText.innerText;
-      btnText.innerText = "캡처 진행 중...";
-
-      // 화면 밖에서 캡처용 UI 생성
-      const captureDiv = document.createElement('div');
-      captureDiv.id = "capture-area";
-      captureDiv.style.position = "absolute";
-      captureDiv.style.left = "-9999px";
-      captureDiv.style.top = "0";
-      captureDiv.className = "bg-[#f8faff] p-8 w-[500px] text-slate-800";
+    function copyFullText() {
+      const text = generateReportText();
+      syncCopy(text);
+      const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
       
-      let html = `
-        <div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);">
-          <div class="text-center mb-8">
-            <h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1>
-            <p class="text-[17px] text-slate-600 font-extrabold">하나린보험 🌸</p>
-            <p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p>
-          </div>
-          <div class="mb-8">
-            <h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2>
-            <ul class="space-y-3 text-[15px]">
-      `;
-      
-      for (let i = 0; i < 6; i++) {
-        const isYes = answers[i] === 'yes';
-        html += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"><span class="font-bold text-slate-600">Q${i + 1}. 해당사항 여부</span> <span class="font-extrabold ${isYes ? 'text-red-500' : 'text-green-600'}">${isYes ? '🔴 예 (있음)' : '🟢 아니오'}</span></li>`;
+      if (isKakao) {
+        alert("✅ 전체 내용이 안전하게 복사되었습니다.\n\n[확인]을 누르시면 원래 대화방으로 되돌아갑니다.\n문자 입력창을 꾹 눌러서 '붙여넣기' 해주세요!");
+        window.location.href = 'kakaotalk://inappbrowser/close';
+      } else {
+        showToast("✅ 전체 텍스트가 복사되었습니다!<br>원하시는 곳에 '붙여넣기' 해주세요.", false);
       }
-      html += `</ul></div>`;
+    }
+
+    function syncCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      // 화면이 스크롤되어 튀는 현상 방지
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.left = "0";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(ta);
+    }
+
+    function generateReportText() {
+      let r = `📋 [계약 전 알릴 의무 리포트]\n작성일시: ${new Date().toLocaleString()}\n\n■ 기본 응답\n`;
+      for (let i = 0; i < 6; i++) r += `[Q${i + 1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
 
       const filledDiseases = diseases.filter(d => d.name || d.startDate);
-      if (filledDiseases.length > 0) {
-        html += `<div class="mb-4">
-          <h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 상세 병력 내용 (${filledDiseases.length}건)</h2>
-          <div class="space-y-4">
-        `;
+      if (filledDiseases.length === 0) {
+        r += "\n✨ 이상 없음!\n";
+      } else {
+        r += "\n■ 상세 내용\n";
         filledDiseases.forEach((d, i) => {
           const typeEmoji = d.type === 'disease' ? '🦠 질병' : '🩸 상해';
-          html += `<div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-            <h3 class="font-extrabold text-indigo-800 mb-3 text-[16px]">< 건수 ${i + 1} (${typeEmoji}) ></h3>
-            <ul class="space-y-2 text-[14px] text-slate-700 font-medium leading-relaxed">
-              <li><span class="font-bold text-slate-500 mr-1">1. ${d.type === 'disease' ? '질병명' : '사고내용'}:</span> <strong class="text-slate-800">${d.name}</strong> ${d.criticalIllnesses.length ? `<span class="text-red-500 text-[12px] font-bold bg-red-50 px-1 rounded ml-1">(11대: ${d.criticalIllnesses.join(', ')})</span>` : ''}</li>
-              ${d.type === 'injury' ? `<li><span class="font-bold text-slate-500 mr-1">2. 다친부위:</span> <strong class="text-slate-800">${d.bodyPart}</strong></li>` : ''}
-              <li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '2' : '3'}. 내원기간:</span> <strong class="text-slate-800">${d.startDate} ~ ${d.endDate}</strong></li>
-              <li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '3' : '4'}. 진료상세:</span> <strong class="text-slate-800">통원 ${d.outPatientDays||0}일 / 약 ${d.medicineDays||0}일 / 입원 ${d.hospitalDays||0}일</strong></li>
-              <li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '4' : '5'}. 수술여부:</span> <strong class="text-slate-800">수술(${d.isSurgery?'O':'X'}) / 입원(${d.isHospitalized?'O':'X'})</strong></li>
-              <li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '5' : '6'}. 치료내용:</span> <strong class="text-slate-800">${d.treatment || '없음'}</strong></li>
-            </ul>
-          </div>`;
+          r += `\n< 건수 ${i + 1} (${typeEmoji}) >\n`;
+          if (d.type === 'disease') {
+            r += `1. 질병명: ${d.name}${d.criticalIllnesses.length ? ` (11대: ${d.criticalIllnesses.join(',')})` : ''}\n`;
+          } else {
+            r += `1. 사고내용: ${d.name}\n2. 다친부위: ${d.bodyPart}\n`;
+          }
+          r += `${d.type === 'disease' ? '2' : '3'}. 내원기간: ${d.startDate}~${d.endDate}\n`;
+          r += `${d.type === 'disease' ? '3' : '4'}. 진료: 통원 ${d.outPatientDays || 0}일/약 ${d.medicineDays || 0}일/입원 ${d.hospitalDays || 0}일\n`;
+          r += `${d.type === 'disease' ? '4' : '5'}. 여부: 입원(${d.isHospitalized ? 'O' : 'X'})/수술(${d.isSurgery ? 'O' : 'X'})\n`;
+          const tIdx = d.type === 'disease' ? '5' : '6';
+          r += `${tIdx}. 치료: ${d.treatment || '없음'}\n`;
         });
-        html += `</div></div>`;
-      } else {
-        html += `<div class="bg-green-50 p-6 rounded-2xl border border-green-100 text-center"><span class="text-[24px] mb-2 block">✨</span><p class="font-extrabold text-green-700 text-[18px]">고지할 상세 병력이 없습니다!</p></div>`;
       }
 
-      html += `</div>`;
-      captureDiv.innerHTML = html;
-      document.body.appendChild(captureDiv);
-
-      try {
-        const canvas = await html2canvas(captureDiv, { scale: 2, useCORS: true, backgroundColor: '#f8faff' });
-        document.body.removeChild(captureDiv);
-        
-        const dataUrl = canvas.toDataURL('image/png');
-        
-        // 🌟 카카오톡, 네이버 앱 등 인앱 브라우저인지 검사
-        const isKakao = /KAKAOTALK|NAVER|Daum|Line/i.test(navigator.userAgent);
-        
-        if (!isKakao && navigator.canShare) {
-          canvas.toBlob(async (blob) => {
-            const file = new File([blob], '알릴의무_리포트.png', { type: 'image/png' });
-            if (navigator.canShare({ files: [file] })) {
-              try {
-                // 정상 브라우저면 기존 시스템 공유창 띄우기
-                await navigator.share({ files: [file], title: '알릴의무 리포트' });
-                btnText.innerText = originalText;
-              } catch (err) {
-                // 공유 취소하거나 에러나면 팝업창 띄우기
-                showImageModal(dataUrl);
-                btnText.innerText = originalText;
-              }
-            } else {
-              showImageModal(dataUrl);
-              btnText.innerText = originalText;
-            }
-          }, 'image/png');
-        } else {
-          // 카카오톡 브라우저면 무조건 길게 눌러 저장하는 팝업창 띄우기
-          showImageModal(dataUrl);
-          btnText.innerText = originalText;
-        }
-
-      } catch (err) {
-        console.error(err);
-        showToast("이미지 생성 중 오류가 발생했습니다. 캡처 기능이 지원되지 않는 브라우저일 수 있습니다.", true);
-        btnText.innerText = originalText;
-        if(document.body.contains(captureDiv)) document.body.removeChild(captureDiv);
-      }
+      r += "\n========================\n위와 같이 고지사항 작성을 완료했습니다.\n확인 부탁드립니다! 😊\n";
+      return r;
     }
 
     function showToast(m, isE) {
@@ -1041,18 +1066,18 @@
     function init() {
       try {
         try { history.pushState(null, null, location.href); } catch (e) { }
-        let loaded = false;
-        try {
-          const s = localStorage.getItem(STORAGE_KEY);
-          if (s) {
-            const p = JSON.parse(s);
-            step = p.step || 0; view = p.view || 'intro'; answers = p.answers || {}; diseases = p.diseases || [];
-            currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId || 1;
-            loaded = true;
-          }
-        } catch (e) { }
+        if (!isViewMode) {
+          try {
+            const s = localStorage.getItem(STORAGE_KEY);
+            if (s) {
+              const p = JSON.parse(s);
+              step = p.step || 0; view = p.view || 'intro'; answers = p.answers || {}; diseases = p.diseases || [];
+              currentTabId = p.currentTabId; nextDiseaseId = p.nextDiseaseId || 1;
+            }
+          } catch (e) { }
+        }
       } catch (err) {
-        console.warn("Init error bypass");
+        console.warn('Init error bypass');
       } finally {
         render(false);
       }
