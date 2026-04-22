@@ -7,8 +7,6 @@
   <title>계약 전 알릴 의무 사항</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8faff; word-break: keep-all; overflow-x: hidden; }
@@ -81,6 +79,21 @@
   </div>
 
   <script>
+    // 🌟 카카오톡 인앱 브라우저 자동 탈출 스크립트 (크롬/사파리로 강제 이동)
+    (function forceExternalBrowser() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.indexOf('kakaotalk') > -1) {
+        const targetUrl = location.href;
+        if (ua.indexOf('android') > -1) {
+          // 안드로이드는 크롬 브라우저로 강제 이동
+          location.href = 'intent://' + targetUrl.replace(/https?:\/\//i, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+        } else if (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1) {
+          // iOS는 사파리 등 외부 브라우저로 강제 이동
+          location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(targetUrl);
+        }
+      }
+    })();
+
     const today = new Date();
     const formatDate = (d) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
     const calcDate = (m, y = 0) => { const d = new Date(today); d.setMonth(d.getMonth() - m); d.setFullYear(d.getFullYear() - y); return formatDate(d); };
@@ -229,48 +242,38 @@
       if (matched.length) { box.innerHTML = `<div class="mt-2 p-3 bg-blue-50/80 rounded-xl border border-blue-100 flex flex-wrap gap-1.5"><span class="w-full text-[11px] font-extrabold text-blue-600 mb-1">💡 추천 병명</span>${matched.map(m => `<div onclick="updateD('name', '${m}'); document.getElementById('suggest-box').innerHTML='';" class="suggest-chip">${m}</div>`).join('')}</div>`; } else box.innerHTML = '';
     }
 
-    // 🌟 핵심 1: 완료 화면 구성 및 자동 이미지 생성 
+    // 🌟 카카오톡 전송을 유도하도록 완전 변경된 Summary View
     function renderSummaryView() {
-      // 화면 렌더링 직후 이미지 그리기
-      setTimeout(generateAndShowImage, 100);
-
-      const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      let guideText = "";
-      if (isKakao) {
-        guideText = "아래 버튼을 누르면 내용이 복사되고<br><strong class='text-slate-700'>카톡 대화방으로 바로 돌아갑니다.</strong>";
-      } else if (isMobile) {
-        guideText = "아래 버튼을 누르면 이 화면이<br><strong class='text-slate-700'>깔끔한 이미지 파일로 공유</strong>됩니다.";
-      } else {
-        guideText = "아래 버튼을 누르면 결과 이미지가<br><strong class='text-slate-700'>클립보드에 바로 복사</strong>됩니다.";
-      }
-
       return `
-        <div class="bg-white p-6 rounded-[2rem] card-shadow border border-white/50 text-center relative overflow-hidden mb-4">
-          <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 to-indigo-600 text-white rounded-full flex items-center justify-center text-[28px] mx-auto mb-4 shadow-xl">🎉</div>
-          <h2 class="text-[22px] font-extrabold text-slate-800 mb-2 tracking-tight">작성이 완료되었습니다!</h2>
-          <p class="text-[14px] text-slate-500 font-medium">${guideText}</p>
-        </div>
-
-        <div class="grid grid-cols-1 gap-3 mb-6">
-          <button onclick="copyTextReport()" class="w-full h-[60px] rounded-2xl font-extrabold text-[16px] bg-slate-800 text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-            텍스트로 바로 복사하기
-          </button>
-        </div>
-
-        <div id="result-image-box" class="w-full min-h-[300px] bg-white rounded-[2rem] card-shadow border border-slate-100 flex flex-col items-center justify-center p-5 mb-10 transition-all">
-          <div class="animate-pulse flex flex-col items-center">
-            <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
-            <p class="text-sm font-bold text-slate-400">결과 이미지를 그리는 중...</p>
+        <div class="bg-white p-6 rounded-[2rem] card-shadow border border-white/50 text-center relative overflow-hidden mb-6 mt-4">
+          <div class="w-16 h-16 bg-[#FEE500] text-[#371D1E] rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.31 1.13-1.12 4.12-1.15 4.25-.04.14.04.28.17.34.06.02.13.02.19 0 .15-.05 3.32-2.22 4.65-3.15.5.07 1.01.1 1.54.1 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+            </svg>
           </div>
+          <h2 class="text-[22px] font-extrabold text-slate-800 mb-4 tracking-tight">작성이 완료되었습니다!</h2>
+          
+          <div class="bg-slate-50 p-5 rounded-2xl mb-2 border border-slate-100">
+            <p class="text-[15.5px] text-slate-700 font-bold leading-relaxed">
+              아래 버튼을 누르면 내용이 복사되고<br>
+              <span class="text-white text-[17px] mt-1 inline-block bg-[#371D1E] px-3 py-1.5 rounded-lg shadow-sm">카카오톡이 바로 열립니다.</span><br>
+              상담 중인 방에 붙여넣기 해주세요!
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 mb-10">
+          <button onclick="shareViaKakao()" class="w-full h-[64px] rounded-2xl font-extrabold text-[17px] bg-[#FEE500] text-[#371D1E] shadow-xl shadow-[#FEE500]/20 active:scale-95 transition-all flex items-center justify-center gap-2 animate-gentle-pulse hover:bg-[#FDD800]">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.31 1.13-1.12 4.12-1.15 4.25-.04.14.04.28.17.34.06.02.13.02.19 0 .15-.05 3.32-2.22 4.65-3.15.5.07 1.01.1 1.54.1 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
+            카카오톡으로 결과 전송하기
+          </button>
         </div>
       `;
     }
 
     function goBack() { if (view === 'q' && step === 0) { view = 'intro'; render(true); } else if (view === 'd') { view = 'q'; render(true); } else if (step > 0) { step--; if (answers[step] === 'yes') view = 'd'; else view = 'q'; render(true); } }
     function goNext() { step++; view = 'q'; if (step > 5) view = 'summary'; render(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    
     function validateAndNext() {
       const stepDiseases = diseases.filter(d => d.qIndex === step); let isValid = true, firstErr = null, msg = "";
       stepDiseases.forEach(d => {
@@ -279,7 +282,6 @@
         if (!d.name.trim()) { d.nameError = true; isValid = false; if (!msg) msg = d.type === 'disease' ? "어떤 질병인지 입력해주세요." : "사고 내용을 입력해주세요."; }
         if (d.type === 'injury' && !d.bodyPart.trim()) { d.nameError = true; isValid = false; if (!msg) msg = "다친 부위를 입력해주세요."; }
         
-        // 🌟 수정된 날짜 로직: 시작일이 아니라 종료일 기준으로 체크
         if (!d.startDate || !d.endDate) { d.dateError = true; isValid = false; if (!msg) msg = "내원 기간을 입력해주세요."; } 
         else if (new Date(d.startDate) > new Date(d.endDate)) { d.sequenceError = true; isValid = false; if (!msg) msg = "시작일이 종료일보다 늦습니다."; } 
         else { const limit = questions[step].limit; if (d.endDate < limit && step !== 5) { d.dateError = true; isValid = false; if (!msg) msg = questions[step].limitMsg; } }
@@ -305,8 +307,8 @@
 
     function handleActionClick() { if (view === 'intro') { view = 'q'; render(true); return; } if (view === 'q') return; if (view === 'd') validateAndNext(); }
 
-    // 🌟 핵심 2: 텍스트 복사 로직 (하나린 텍스트 완전 제거됨)
-    function copyTextReport() {
+    // 🌟 텍스트 복사 + 카카오톡 앱 자동 실행 및 안내
+    function shareViaKakao() {
       let r = `📋 [계약 전 알릴 의무 리포트]\n작성일시: ${new Date().toLocaleString()}\n\n■ 기본 응답\n`;
       for (let i = 0; i < 6; i++) r += `[Q${i + 1}] ${answers[i] === 'yes' ? '🔴 예' : '🟢 아니오'}\n`;
       const filledDiseases = diseases.filter(d => d.name || d.startDate);
@@ -326,85 +328,29 @@
       }
       r += "\n========================\n작성을 완료했습니다. 확인 부탁드립니다! 😊\n";
 
+      // 1. 클립보드에 텍스트 복사
       const ta = document.createElement("textarea");
       ta.value = r; ta.style.position = "fixed"; ta.style.top = "0"; ta.style.left = "0"; ta.style.opacity = "0";
       document.body.appendChild(ta); ta.focus(); ta.select();
       try { document.execCommand('copy'); } catch (err) {}
       document.body.removeChild(ta);
 
-      if (/KAKAOTALK/i.test(navigator.userAgent)) {
-        alert("✅ 복사 완료!\n\n[확인]을 누르시면 창이 닫힙니다.\n대화방에 '붙여넣기' 해주세요.");
+      // 2. 카카오톡 환경별 분기 처리 및 안내문구
+      const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (isKakao) {
+        // 카카오톡 인앱 브라우저일 경우 창 닫기 유도
+        alert("✅ 내용이 복사되었습니다!\n\n[확인]을 누르면 이 화면이 닫힙니다.\n상담 중인 설계사 카톡방에 '붙여넣기' 해주세요.");
         window.location.href = 'kakaotalk://inappbrowser/close';
+      } else if (isMobile) {
+        // 일반 모바일 브라우저일 경우 카카오톡 앱 호출
+        alert("✅ 내용이 복사되었습니다!\n\n카카오톡 앱이 열리면\n상담 중인 설계사 카톡방에 '붙여넣기' 해주세요.");
+        window.location.href = 'kakaotalk://';
       } else {
-        showToast("✅ 내용이 복사되었습니다! 원하는 곳에 붙여넣기 해주세요.", false);
+        // PC 브라우저일 경우 알림만
+        showToast("✅ 복사 완료! PC 카카오톡이나 메신저에 붙여넣기 해주세요.", false);
       }
-    }
-
-    // 🌟 핵심 3: 이미지 생성 및 공유 로직
-    async function generateAndShowImage() {
-      const captureDiv = document.createElement('div');
-      captureDiv.id = "capture-area"; captureDiv.style.position = "absolute"; captureDiv.style.left = "-9999px"; captureDiv.style.top = "0"; captureDiv.className = "bg-[#f8faff] p-8 w-[500px] text-slate-800";
-      
-      // 타이틀에서 "하나린보험" 문구 제거 및 일반적인 "종합보험 🌸" 사용
-      let html = `<div class="bg-white p-8 rounded-[2rem] border border-slate-200" style="box-shadow: 0 10px 40px rgba(0,0,0,0.05);"><div class="text-center mb-8"><h1 class="text-[26px] font-extrabold text-indigo-600 mb-2">📋 계약 전 알릴 의무 리포트</h1><p class="text-[17px] text-slate-600 font-extrabold">종합보험 🌸</p><p class="text-[13px] text-slate-400 mt-1">작성일시: ${new Date().toLocaleString()}</p></div><div class="mb-8"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 기본 질문 응답 요약</h2><ul class="space-y-3 text-[15px]">`;
-      for (let i = 0; i < 6; i++) { const isYes = answers[i] === 'yes'; html += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100"><span class="font-bold text-slate-600">Q${i + 1}. 해당사항 여부</span> <span class="font-extrabold ${isYes ? 'text-red-500' : 'text-green-600'}">${isYes ? '🔴 예 (있음)' : '🟢 아니오'}</span></li>`; }
-      html += `</ul></div>`;
-      const filledDiseases = diseases.filter(d => d.name || d.startDate);
-      if (filledDiseases.length > 0) {
-        html += `<div class="mb-4"><h2 class="text-[18px] font-extrabold text-slate-800 mb-4 border-b-2 border-slate-800 pb-2">■ 상세 병력 내용 (${filledDiseases.length}건)</h2><div class="space-y-4">`;
-        filledDiseases.forEach((d, i) => { const typeEmoji = d.type === 'disease' ? '🦠 질병' : '🩸 상해'; html += `<div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100"><h3 class="font-extrabold text-indigo-800 mb-3 text-[16px]">< 건수 ${i + 1} (${typeEmoji}) ></h3><ul class="space-y-2 text-[14px] text-slate-700 font-medium leading-relaxed"><li><span class="font-bold text-slate-500 mr-1">1. ${d.type === 'disease' ? '질병명' : '사고내용'}:</span> <strong class="text-slate-800">${d.name}</strong> ${d.criticalIllnesses.length ? `<span class="text-red-500 text-[12px] font-bold bg-red-50 px-1 rounded ml-1">(11대: ${d.criticalIllnesses.join(', ')})</span>` : ''}</li>${d.type === 'injury' ? `<li><span class="font-bold text-slate-500 mr-1">2. 다친부위:</span> <strong class="text-slate-800">${d.bodyPart}</strong></li>` : ''}<li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '2' : '3'}. 내원기간:</span> <strong class="text-slate-800">${d.startDate} ~ ${d.endDate}</strong></li><li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '3' : '4'}. 진료상세:</span> <strong class="text-slate-800">통원 ${d.outPatientDays||0}일 / 약 ${d.medicineDays||0}일 / 입원 ${d.hospitalDays||0}일</strong></li><li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '4' : '5'}. 수술여부:</span> <strong class="text-slate-800">수술(${d.isSurgery?'O':'X'}) / 입원(${d.isHospitalized?'O':'X'})</strong></li><li><span class="font-bold text-slate-500 mr-1">${d.type === 'disease' ? '5' : '6'}. 치료내용:</span> <strong class="text-slate-800">${d.treatment || '없음'}</strong></li></ul></div>`; });
-        html += `</div></div>`;
-      } else { html += `<div class="bg-green-50 p-6 rounded-2xl border border-green-100 text-center"><span class="text-[24px] mb-2 block">✨</span><p class="font-extrabold text-green-700 text-[18px]">고지할 상세 병력이 없습니다!</p></div>`; }
-      html += `</div>`;
-      captureDiv.innerHTML = html; document.body.appendChild(captureDiv);
-
-      try {
-        const canvas = await html2canvas(captureDiv, { scale: 2, useCORS: true, backgroundColor: '#f8faff' });
-        document.body.removeChild(captureDiv);
-        const dataUrl = canvas.toDataURL('image/png');
-        const box = document.getElementById('result-image-box');
-        
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
-
-        let guideMsg = "꾹 눌러서 사진 앱에 저장하세요";
-        let extraBtn = "";
-
-        if (!isMobile) {
-          guideMsg = "우클릭하여 '이미지를 다른 이름으로 저장' 하세요";
-          extraBtn = `<button onclick="downloadImage('${dataUrl}')" class="w-full mt-3 h-[50px] rounded-xl font-bold text-[15px] bg-slate-100 text-slate-700 border border-slate-200 active:scale-95 transition-all">컴퓨터에 이미지 다운로드</button>`;
-        } else if (!isKakao && navigator.canShare) {
-          guideMsg = "꾹 눌러서 저장하거나 아래 버튼으로 공유하세요";
-          extraBtn = `<button id="native-share-btn" class="w-full mt-3 h-[50px] rounded-xl font-bold text-[15px] bg-indigo-50 text-indigo-700 border border-indigo-200 active:scale-95 transition-all">📤 다른 앱으로 이미지 공유하기</button>`;
-        }
-
-        box.innerHTML = `
-          <p class="text-[13px] font-bold text-indigo-600 mb-3 bg-indigo-50 px-3 py-1 rounded-full text-center">👇 ${guideMsg} 👇</p>
-          <img src="${dataUrl}" class="w-full h-auto rounded-xl shadow-md border border-slate-200 allow-select" style="-webkit-touch-callout: default; pointer-events: auto;" alt="알릴의무 리포트">
-          ${extraBtn}
-        `;
-
-        const shareBtn = document.getElementById('native-share-btn');
-        if (shareBtn) {
-          shareBtn.onclick = () => {
-            canvas.toBlob(async (blob) => {
-              const file = new File([blob], '알릴의무_리포트.png', { type: 'image/png' });
-              try { await navigator.share({ files: [file], title: '알릴 의무 리포트' }); } catch(e) {}
-            }, 'image/png');
-          };
-        }
-
-      } catch (err) {
-        document.getElementById('result-image-box').innerHTML = `<p class="text-red-500 font-bold text-sm">이미지 생성 중 오류가 발생했습니다.</p>`;
-        if(document.body.contains(captureDiv)) document.body.removeChild(captureDiv);
-      }
-    }
-
-    function downloadImage(dataUrl) {
-      const link = document.createElement('a');
-      link.download = '알릴의무_리포트.png'; // 파일명 수정됨
-      link.href = dataUrl;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
     function showToast(m, isE) { const t = document.getElementById('toast'), c = document.getElementById('toast-content'); t.classList.remove('hidden'); t.classList.add('toast-enter'); c.className = `flex flex-col gap-1.5 px-5 py-4 rounded-2xl shadow-xl text-[14.5px] font-bold text-white bg-slate-800 border-l-4 ${isE ? 'border-red-500' : 'border-green-400'} text-center leading-relaxed z-[999]`; c.innerHTML = `<span>${m}</span>`; setTimeout(() => { t.classList.remove('toast-enter'); t.classList.add('hidden'); }, 3500); }
